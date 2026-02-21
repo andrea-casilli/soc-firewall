@@ -1,0 +1,336 @@
+# SOC Firewall Staging Configuration
+# Version: 1.0.0
+# Environment: staging
+
+# Firewall Core Configuration
+firewall:
+  # Network interface to monitor
+  interface: "eth0"
+  
+  # Operation mode (promiscuous: capture all packets)
+  promiscuous_mode: false
+  
+  # Packet buffer size (bytes)
+  buffer_size: 65536
+  
+  # Number of worker threads for packet processing
+  num_workers: 2  # Reduced for staging
+  
+  # Packet queue size
+  queue_size: 5000  # Smaller queue for staging
+  
+  # Block external ICMP echo requests (ping)
+  block_external_ping: true
+  
+  # Enable stateful connection tracking
+  enable_stateful: true
+  
+  # Maximum concurrent connections
+  max_connections: 50000  # Lower limit for staging
+  
+  # Connection timeout (seconds)
+  connection_timeout: 300
+  
+  # Enable NAT tracking
+  enable_nat: false
+  
+  # Enable detailed logging
+  enable_logging: true
+  
+  # Default action for unmatched packets
+  default_action: "allow"
+  
+  # Internal network ranges
+  internal_networks:
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+    - "192.168.0.0/16"
+    - "127.0.0.0/8"
+  
+  # IP whitelist (include test IPs)
+  whitelist:
+    - "127.0.0.1"
+    - "::1"
+    - "192.168.1.100"  # Test machine
+  
+  # IP blacklist (test blacklist)
+  blacklist:
+    - "198.51.100.0/24"  # TEST-NET-1
+
+# Intrusion Detection Configuration
+detection:
+  # Enable IDS engine
+  enable_ids: true
+  
+  # Enable anomaly detection
+  enable_anomaly: true
+  
+  # Enable threat intelligence
+  enable_threat_intel: true  # Enable for testing
+  
+  # Signature directory
+  signature_dir: "/etc/soc-firewall/signatures"
+  
+  # Detection thresholds (lower for easier testing)
+  thresholds:
+    port_scan: 20  # Lower threshold for testing
+    syn_flood: 50
+    dos: 500
+    bruteforce: 5
+    icmp_flood: 25
+    connection_rate: 250
+  
+  # Protocol analysis
+  check_protocol_anomalies: true
+  check_payload: true
+  max_payload_size: 65535
+  
+  # Machine learning (disabled in staging)
+  enable_ml: false
+  model_path: "/etc/soc-firewall/models"
+  training_interval: 86400
+
+# Automated Response Configuration
+response:
+  # Enable automated incident response
+  enable_auto_response: true
+  
+  # Enable IP quarantine
+  enable_quarantine: true
+  
+  # Default quarantine duration (seconds) - shorter for testing
+  quarantine_default_duration: 300  # 5 minutes
+  
+  # Enable alerting
+  enable_alerting: true
+  
+  # Enable notifications
+  enable_notifications: true
+  
+  # Alert channels - include all for testing
+  alert_channels:
+    - "log"
+    - "email"
+    - "slack"
+    - "webhook"
+  
+  # Email configuration (test settings)
+  email:
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    from_addr: "soc-firewall-staging@yourdomain.com"
+    to_addrs:
+      - "security-team-staging@yourdomain.com"
+    username: "${SMTP_USERNAME_STAGING}"
+    password: "${SMTP_PASSWORD_STAGING}"
+    use_tls: true
+  
+  # Slack configuration (test channel)
+  slack:
+    webhook_url: "${SLACK_WEBHOOK_URL_STAGING}"
+    channel: "#security-alerts-test"
+    username: "SOC Firewall Staging"
+  
+  # Webhook configuration (test endpoint)
+  webhook:
+    url: "${WEBHOOK_URL_STAGING}"
+    headers:
+      Content-Type: "application/json"
+      X-API-Key: "${WEBHOOK_API_KEY_STAGING}"
+    method: "POST"
+  
+  # Playbook directory
+  playbook_dir: "/etc/soc-firewall/playbooks"
+
+# API Configuration
+api:
+  # REST API - more permissive in staging
+  enable_rest_api: true
+  rest_host: "0.0.0.0"  # Listen on all interfaces for testing
+  rest_port: 5000
+  rest_debug: true  # Enable debug mode
+  
+  # WebSocket for real-time events
+  enable_websocket: true
+  websocket_host: "0.0.0.0"
+  websocket_port: 8765
+  
+  # Authentication (can be disabled for testing)
+  enable_auth: true
+  token_expiry: 86400  # 24 hours
+  
+  # Development API tokens
+  api_tokens:
+    "dev_admin_token_2024":
+      permissions: ["admin", "read", "write", "configure"]
+      expiry: 4102444800  # Year 2100
+      user: "dev_admin"
+    "dev_readonly_token_2024":
+      permissions: ["read"]
+      expiry: 4102444800
+      user: "dev_readonly"
+    "test_token_2024":
+      permissions: ["read", "write"]
+      expiry: 4102444800
+      user: "tester"
+  
+  # CORS - allow all origins for testing
+  enable_cors: true
+  allowed_origins:
+    - "*"
+  
+  # Rate limiting (disabled for testing)
+  enable_rate_limit: false
+  rate_limit: 1000  # Higher limit if enabled
+  
+  # SSL/TLS (disabled in staging)
+  ssl_enabled: false
+
+# Logging Configuration
+logging:
+  # Log directory
+  log_dir: "/var/log/soc-firewall"
+  
+  # Log level - debug for staging
+  log_level: "debug"
+  
+  # Log format: json or text
+  log_format: "json"
+  
+  # Maximum log file size
+  max_log_size: 10485760  # 10MB
+  
+  # Number of backup log files
+  backup_count: 3  # Fewer for staging
+  
+  # Output to console (useful for development)
+  console_output: true
+  
+  # Audit logging
+  enable_audit: true
+  audit_log_size: 10485760  # 10MB
+  audit_backup_count: 5
+
+# Threat Intelligence Feeds
+threat_intel:
+  # Enable threat intelligence
+  enabled: true
+  
+  # Database path
+  db_path: "/var/lib/soc-firewall/threat_intel.db"
+  
+  # Update interval - more frequent for testing
+  update_interval: 1800  # 30 minutes
+  
+  # Feed configuration
+  feeds:
+    - name: "Firehol Level 1"
+      url: "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level1.netset"
+      type: "ip"
+      format: "txt"
+      enabled: true
+      confidence: 0.8
+    
+    - name: "Firehol Level 2"
+      url: "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level2.netset"
+      type: "ip"
+      format: "txt"
+      enabled: true
+      confidence: 0.7
+    
+    - name: "MalwareDomains"
+      url: "https://mirror1.malwaredomains.com/files/justdomains"
+      type: "domain"
+      format: "txt"
+      enabled: true
+      confidence: 0.8
+    
+    - name: "Emerging Threats Compromised"
+      url: "https://rules.emergingthreats.net/blockrules/compromised-ips.txt"
+      type: "ip"
+      format: "txt"
+      enabled: true
+      confidence: 0.9
+    
+    - name: "CINSscore"
+      url: "https://cinsscore.com/list/ci-badguys.txt"
+      type: "ip"
+      format: "txt"
+      enabled: true
+      confidence: 0.8
+    
+    - name: "Blocklist.de"
+      url: "https://lists.blocklist.de/lists/all.txt"
+      type: "ip"
+      format: "txt"
+      enabled: true
+      confidence: 0.7
+    
+    - name: "Spamhaus DROP"
+      url: "https://www.spamhaus.org/drop/drop.txt"
+      type: "ip"
+      format: "txt"
+      enabled: true
+      confidence: 0.9
+    
+    - name: "SSL Blacklist"
+      url: "https://sslbl.abuse.ch/blacklist/sslipblacklist.csv"
+      type: "ip"
+      format: "csv"
+      enabled: true
+      confidence: 0.8
+    
+    - name: "Test Feed (Local)"
+      url: "file:///etc/soc-firewall/test_feed.txt"
+      type: "ip"
+      format: "txt"
+      enabled: true
+      confidence: 0.5
+
+# Performance Tuning (relaxed for staging)
+performance:
+  # CPU affinity
+  cpu_affinity: []
+  
+  # Memory limits
+  memory_limit_mb: 512  # Lower for staging
+  
+  # File descriptor limits
+  max_open_files: 32768
+  
+  # Network buffer sizes
+  socket_buffer_size: 16384
+  
+  # Garbage collection
+  gc_threshold: 5000
+  gc_interval: 60  # seconds
+
+# High Availability (disabled in staging)
+ha:
+  enabled: false
+
+# Security Hardening (relaxed for staging)
+security:
+  # Drop privileges (optional in staging)
+  drop_privileges: false
+  run_as_user: "socfw"
+  run_as_group: "socfw"
+  
+  # Chroot jail (disabled in staging)
+  chroot_dir: ""
+  
+  # Seccomp filtering (disabled for testing)
+  enable_seccomp: false
+  
+  # Capabilities (all for testing)
+  capabilities:
+    - "CAP_NET_ADMIN"
+    - "CAP_NET_RAW"
+    - "CAP_NET_BIND_SERVICE"
+    - "CAP_SYS_ADMIN"
+  
+  # Masked environment variables
+  masked_env_vars:
+    - "SMTP_PASSWORD_STAGING"
+    - "SLACK_WEBHOOK_URL_STAGING"
+    - "WEBHOOK_API_KEY_STAGING"
