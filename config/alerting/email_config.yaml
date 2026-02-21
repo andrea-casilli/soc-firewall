@@ -1,0 +1,258 @@
+# SOC Firewall Email Alert Configuration
+# Email notification settings for security alerts
+# Version: 1.0.0
+
+# Email server configuration
+smtp:
+  # SMTP server settings
+  server: "smtp.gmail.com"
+  port: 587
+  use_tls: true
+  use_ssl: false
+  timeout: 30
+  
+  # Authentication (use environment variables for passwords)
+  username: "${SMTP_USERNAME}"
+  password: "${SMTP_PASSWORD}"
+  
+  # Sender information
+  from_addr: "soc-firewall@yourdomain.com"
+  from_name: "SOC Firewall Alert System"
+  
+  # Connection pool
+  pool_size: 5
+  pool_timeout: 10
+
+# Default recipients
+default_recipients:
+  - "security-team@yourdomain.com"
+  - "soc@yourdomain.com"
+
+# Recipient groups
+recipient_groups:
+  security_team:
+    - "security-team@yourdomain.com"
+    - "soc-lead@yourdomain.com"
+  
+  administrators:
+    - "admin@yourdomain.com"
+    - "sysadmin@yourdomain.com"
+  
+  management:
+    - "ciso@yourdomain.com"
+    - "security-manager@yourdomain.com"
+  
+  oncall:
+    - "oncall@yourdomain.com"
+  
+  development:
+    - "dev-lead@yourdomain.com"
+    - "security-dev@yourdomain.com"
+
+# Alert routing by severity
+routing:
+  critical:
+    recipients: 
+      - "security-team@yourdomain.com"
+      - "management"
+      - "oncall"
+    subject: "[CRITICAL] SOC Firewall Alert: {title}"
+    priority: 1
+    retry_count: 5
+    retry_interval: 60
+  
+  high:
+    recipients: 
+      - "security-team@yourdomain.com"
+      - "oncall"
+    subject: "[HIGH] SOC Firewall Alert: {title}"
+    priority: 2
+    retry_count: 3
+    retry_interval: 120
+  
+  medium:
+    recipients: 
+      - "security-team@yourdomain.com"
+    subject: "[MEDIUM] SOC Firewall Alert: {title}"
+    priority: 3
+    retry_count: 2
+    retry_interval: 300
+  
+  low:
+    recipients: 
+      - "security-team@yourdomain.com"
+    subject: "[LOW] SOC Firewall Alert: {title}"
+    priority: 4
+    retry_count: 1
+    retry_interval: 600
+  
+  info:
+    recipients: 
+      - "security-team@yourdomain.com"
+    subject: "[INFO] SOC Firewall Notification: {title}"
+    priority: 5
+    enabled: false  # Disable info emails by default
+
+# Email templates
+templates:
+  default:
+    subject: "SOC Firewall Alert: {title}"
+    body: |
+      Alert ID: {alert_id}
+      Time: {timestamp}
+      Severity: {severity}
+      Source: {source}
+      
+      Title: {title}
+      Message: {message}
+      
+      Details:
+      - Signature: {signature_name} ({signature_id})
+      - Category: {category}
+      - Source IP: {src_ip}
+      - Destination IP: {dst_ip}
+      - Protocol: {protocol}
+      - Port: {dst_port}
+      
+      Tags: {tags}
+      
+      This is an automated alert from SOC Firewall.
+      Please investigate immediately.
+  
+  incident:
+    subject: "INCIDENT {incident_id}: {title}"
+    body: |
+      INCIDENT REPORT
+      ===============
+      Incident ID: {incident_id}
+      Time: {timestamp}
+      Severity: {severity}
+      Status: {status}
+      
+      Title: {title}
+      Description: {description}
+      
+      Affected Assets:
+      {affected_assets}
+      
+      Related Alerts:
+      {related_alerts}
+      
+      Actions Taken:
+      {actions_taken}
+      
+      This incident requires immediate attention.
+  
+  summary:
+    subject: "SOC Firewall Daily Summary - {date}"
+    body: |
+      SOC Firewall Daily Summary
+      ==========================
+      Date: {date}
+      
+      Statistics:
+      - Total Alerts: {total_alerts}
+      - Critical: {critical_count}
+      - High: {high_count}
+      - Medium: {medium_count}
+      - Low: {low_count}
+      
+      Top Attack Sources:
+      {top_sources}
+      
+      Top Signatures:
+      {top_signatures}
+      
+      Quarantined IPs: {quarantined_count}
+      Active Incidents: {active_incidents}
+      
+      Full report attached.
+
+# Throttling settings
+throttling:
+  enabled: true
+  max_emails_per_hour: 100
+  max_emails_per_minute: 10
+  cooldown_period: 300  # seconds between identical alerts
+
+# Rate limiting by severity
+rate_limits:
+  critical:
+    max_per_hour: 50
+    max_per_minute: 5
+  high:
+    max_per_hour: 100
+    max_per_minute: 10
+  medium:
+    max_per_hour: 200
+    max_per_minute: 20
+  low:
+    max_per_hour: 500
+    max_per_minute: 50
+
+# Digest settings
+digest:
+  enabled: true
+  interval: 300  # 5 minutes
+  max_alerts_per_digest: 50
+  send_empty: false
+  
+  schedules:
+    - time: "09:00"
+      severity: ["critical", "high", "medium", "low"]
+    - time: "17:00"
+      severity: ["critical", "high", "medium"]
+
+# Attachment settings
+attachments:
+  enabled: true
+  max_size: 10485760  # 10MB
+  allowed_types:
+    - "text/plain"
+    - "text/csv"
+    - "application/json"
+    - "application/pdf"
+
+# DKIM signing (optional)
+dkim:
+  enabled: false
+  domain: "yourdomain.com"
+  selector: "soc-firewall"
+  key_file: "/etc/ssl/private/dkim-private.key"
+
+# Encryption settings
+encryption:
+  enabled: false
+  pgp_keys:
+    security-team@yourdomain.com: "/etc/soc-firewall/pgp/security-team.asc"
+  method: "pgp"  # pgp, smime
+
+# Error handling
+error_handling:
+  max_retries: 3
+  retry_delay: 60
+  fallback_channel: "slack"  # Send to Slack if email fails
+  alert_on_failure: true
+  failure_recipients:
+    - "admin@yourdomain.com"
+
+# Queue settings
+queue:
+  enabled: true
+  max_size: 1000
+  persistent: true
+  queue_dir: "/var/lib/soc-firewall/email_queue"
+
+# Logging
+logging:
+  level: "info"
+  file: "/var/log/soc-firewall/email_alerts.log"
+  format: "json"
+  include_body: false  # Don't log email bodies for privacy
+
+# Test configuration
+test:
+  enabled: false
+  recipients:
+    - "test@yourdomain.com"
+  override_subject: "[TEST] {subject}"
