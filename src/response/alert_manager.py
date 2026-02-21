@@ -438,4 +438,150 @@ class AlertManager:
                 "high": "#FFA500",
                 "critical": "#FF0000"
             }
-            color = colors.get(alert.severity.value, "#808
+            color = colors.get(alert.severity.value, "#808080")
+            
+            # Create message
+            message = {
+                "channel": config["channel"],
+                "username": config["username"],
+                "attachments": [
+                    {
+                        "color": color,
+                        "title": f"[{alert.severity.value.upper()}] {alert.title}",
+                        "text": alert.message,
+                        "fields": [
+                            {"title": "Alert ID", "value": alert.id, "short": True},
+                            {"title": "Source", "value": alert.source, "short": True},
+                            {"title": "Signature", "value": alert.signature_name or "N/A", "short": True},
+                            {"title": "Category", "value": alert.category or "N/A", "short": True},
+                            {"title": "Source IP", "value": alert.src_ip or "N/A", "short": True},
+                            {"title": "Destination", "value": f"{alert.dst_ip}:{alert.dst_port}" if alert.dst_ip else "N/A", "short": True}
+                        ],
+                        "footer": "SOC Firewall",
+                        "ts": int(alert.timestamp)
+                    }
+                ]
+            }
+            
+            # Send to Slack
+            response = requests.post(
+                config["webhook_url"],
+                json=message,
+                timeout=5
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"Slack API error: {response.status_code} - {response.text}")
+            
+        except Exception as e:
+            logger.error(f"Error sending Slack notification: {e}")
+    
+    def _send_webhook(self, alert: Alert) -> None:
+        """Send alert via webhook"""
+        try:
+            config = self.channels[AlertChannel.WEBHOOK]
+            
+            # Prepare payload
+            payload = alert.to_dict()
+            
+            # Send webhook
+            if config["method"].upper() == "POST":
+                response = requests.post(
+                    config["url"],
+                    json=payload,
+                    headers=config["headers"],
+                    timeout=5
+                )
+            else:
+                response = requests.get(
+                    config["url"],
+                    params=payload,
+                    headers=config["headers"],
+                    timeout=5
+                )
+            
+            if response.status_code not in [200, 201, 202, 204]:
+                logger.error(f"Webhook error: {response.status_code}")
+            
+        except Exception as e:
+            logger.error(f"Error sending webhook: {e}")
+    
+    def acknowledge_alert(self, alert_id: str, user: str) -> bool:
+        """
+        Acknowledge an alert
+        
+        Args:
+            alert_id: Alert ID
+            user: User acknowledging
+            
+        Returns:
+            True if acknowledged
+        """
+        with self.lock:
+            if alert_id not in self.alerts:
+                return False
+            
+            alert = self.alerts[alert_id]
+            alert.acknowledged = True
+            alert.acknowledged_by = user
+            alert.acknowledged_at = time.time()
+            
+            logger.info(f"Alert {alert_id} acknowledged by {user}")
+            return True
+    
+    def get_alerts(
+        self,
+        severity: Optional[AlertSeverity] = None,
+        source: Optional[str] = None,
+        limit: int = 100,
+        unacknowledged_only: bool = False
+    ) -> List[Alert]:
+        """
+        Get alerts with filters
+        
+        Args:
+            severity: Filter by severity
+            source: Filter by source
+            limit: Maximum number to return
+            unacknowledged_only: Only unacknowledged alerts
+            
+        Returns:
+            List of alerts
+        """
+        with self.lock:
+            alerts = list(self.alerts.values())
+            
+            if severity:
+                alerts = [a for a in alerts if a.severity == severity]
+            
+            if source:
+                alerts = [a for a in alerts if a.source == source]
+            
+            if unacknowledged_only:
+                alerts = [a for a in alerts if not a.acknowledged]
+            
+            # Sort by timestamp (newest first)
+            alerts.sort(key=lambda a: a.timestamp, reverse=True)
+            
+            return alerts[:limit]
+    
+    def get_statistics(self) -> Dict:
+        """Get alert statistics"""
+        with self.lock:
+            unacknowledged = len([a for a in self.alerts.values() if not a.acknowledged])
+            
+            return {
+                "total_alerts": self.stats["total_alerts"],
+                "unacknowledged": unacknowledged,
+                "notifications_sent": self.stats["notifications_sent"],
+                "by_severity": dict(self.stats["alerts_by_severity"]),
+                "by_source": dict(self.stats["alerts_by_source"])
+            }
+    
+    def shutdown(self) -> None:
+        """Shutdown alert manager"""
+        logger.info("Shutting down alert manager...")
+        self.running = False
+        if self.worker.is_alive():
+            self.worker.join(timeout=5)
+        logger.info("Alert manager stopped")
