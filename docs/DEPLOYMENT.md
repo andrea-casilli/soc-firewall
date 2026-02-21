@@ -562,3 +562,173 @@ sudo apt update
 sudo apt upgrade soc-firewall
 
 # Review configuration changes
+sudo diff -u /etc/soc-firewall.backup/production.yaml /etc/soc-firewall/production.yaml
+
+# Start service
+sudo systemctl start soc-firewall
+```
+
+### Major Version Upgrade
+
+```bash
+# Full backup
+sudo /usr/local/bin/backup-soc-firewall.sh
+
+# Read release notes
+less /usr/share/doc/soc-firewall/UPGRADING.md
+
+# Perform upgrade
+sudo apt update
+sudo apt install soc-firewall
+
+# Run database migrations (if applicable)
+sudo -u socfw python -m alembic upgrade head
+
+# Verify upgrade
+sudo systemctl status soc-firewall
+curl http://localhost:5000/api/v1/status
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Issue: Packet capture not working
+
+**Symptoms**: No packets being processed, interface errors
+
+**Solutions**:
+```bash
+# Check interface
+ip link show eth0
+
+# Check promiscuous mode
+ip link show eth0 | grep -i promisc
+
+# Check capabilities
+getcap /usr/bin/python3.11
+# Should show: cap_net_admin,cap_net_raw+ep
+
+# Check permissions
+sudo -u socfw tcpdump -i eth0 -c 1
+```
+
+#### Issue: Service won't start
+
+**Symptoms**: systemd service fails
+
+**Solutions**:
+```bash
+# Check logs
+sudo journalctl -u soc-firewall -n 50 --no-pager
+
+# Validate configuration
+sudo -u socfw python -c "
+import yaml
+with open('/etc/soc-firewall/production.yaml') as f:
+    yaml.safe_load(f)
+"
+
+# Check permissions
+sudo ls -la /etc/soc-firewall/
+```
+
+#### Issue: High memory usage
+
+**Symptoms**: OOM kills, slow performance
+
+**Solutions**:
+```bash
+# Check current usage
+ps aux | grep soc-firewall
+free -h
+
+# Adjust configuration
+# Reduce max_connections in config
+# Reduce num_workers
+
+# Set memory limit in systemd
+sudo systemctl edit soc-firewall
+# Add:
+[Service]
+MemoryLimit=2G
+```
+
+#### Issue: API not responding
+
+**Symptoms**: curl timeout, connection refused
+
+**Solutions**:
+```bash
+# Check if service is running
+sudo systemctl status soc-firewall
+
+# Check port binding
+sudo netstat -tlnp | grep 5000
+
+# Check firewall
+sudo iptables -L -n | grep 5000
+
+# Test locally
+curl -v http://localhost:5000/api/v1/status
+```
+
+### Debug Mode
+
+Enable debug logging temporarily:
+
+```bash
+# Edit config
+sudo sed -i 's/log_level: info/log_level: debug/' /etc/soc-firewall/production.yaml
+
+# Restart
+sudo systemctl restart soc-firewall
+
+# Monitor logs
+sudo tail -f /var/log/soc-firewall/soc_firewall.log
+
+# Revert after debugging
+sudo sed -i 's/log_level: debug/log_level: info/' /etc/soc-firewall/production.yaml
+```
+
+### Performance Tuning
+
+```bash
+# Check current performance
+curl http://localhost:5000/api/v1/stats
+
+# Adjust worker count based on CPU cores
+# num_workers = CPU cores * 2
+
+# Increase queue size for high traffic
+# queue_size: 50000
+
+# Adjust connection limits
+# max_connections: 500000
+# connection_timeout: 600
+```
+
+## Support
+
+### Getting Help
+
+- **Documentation**: `man soc-firewall`
+- **Logs**: `/var/log/soc-firewall/`
+- **GitHub Issues**: [https://github.com/yourorg/soc-firewall/issues](https://github.com/yourorg/soc-firewall/issues)
+- **Email**: support@example.com
+- **Slack**: #soc-firewall-support
+
+### Reporting Issues
+
+When reporting issues, include:
+
+1. Version information
+2. Configuration (redacted)
+3. Logs from around the time of issue
+4. Steps to reproduce
+5. Expected vs actual behavior
+
+```bash
+# Collect diagnostic information
+sudo soc-firewall-diagnostics > diagnostics.txt
+```
