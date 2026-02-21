@@ -1,0 +1,194 @@
+# Git
+.git
+.gitignore
+.gitattributes
+.gitmodules
+
+# Version control
+.github
+.gitlab
+.hg
+.svn
+
+# CI/CD
+.jenkins
+.circleci
+.travis.yml
+.gitlab-ci.yml
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python
+__pycache__
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache
+.coverage
+.coverage.*
+htmlcov
+*.cover
+*.log
+*.pid
+*.egg-info
+dist
+build
+*.egg
+venv
+env
+.env
+.venv
+ENV
+env.bak
+venv.bak
+pythonenv*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Test files
+tests/
+test-reports/
+*.test.js
+*.spec.js
+coverage/
+
+# Project specific
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+README-docker.md
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.cert
+secrets/
+!ssl/*.crt
+!ssl/*.key
+*.p12
+*.pfx
+*.keystore
+*.truststore
+
+# Environment files
+.env
+.env.*
+!.env.example
+*.env.local
+*.env.development
+*.env.production
+*.env.test
+
+# Config overrides
+config/*.local.yaml
+config/*.local.yml
+config/*.override.yaml
+config/*.override.yml
+config/development.yaml
+config/staging.yaml
+!config/production.yaml
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.cache
+
+# Backups
+*.bak
+*.backup
+*.old
+*.orig
+
+# Documentation
+docs/
+*.md
+!README.md
+!docker/README.md
+
+# Scripts
+scripts/
+*.sh
+*.bat
+!docker/entrypoint.sh
+!docker/healthcheck.sh
+
+# Kubernetes
+k8s/
+helm/
+charts/
+
+# Terraform
+terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+
+# Ansible
+ansible/
+*.retry
+
+# Vagrant
+Vagrantfile
+.vagrant/
+
+# System files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Large files
+*.tar
+*.gz
+*.zip
+*.7z
+*.rar
+*.iso
+*.img
+*.bin
+
+# Node (if any)
+node_modules
+package-lock.json
+yarn.lock
+
+# Don't ignore these
+!docker/entrypoint.sh
+!docker/healthcheck.sh
+!docker/scripts/
+!docker/config/
+!requirements/*.txt
+!src/
+!main.py
+!config/production.yaml
+!config/rules/
+!config/alerting/
+!LICENSE
+!README.md
