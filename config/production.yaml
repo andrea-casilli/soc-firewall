@@ -1,0 +1,347 @@
+# SOC Firewall Production Configuration
+# Version: 1.0.0
+# Environment: production
+
+# Firewall Core Configuration
+firewall:
+  # Network interface to monitor
+  interface: "eth0"
+  
+  # Operation mode (promiscuous: capture all packets)
+  promiscuous_mode: false
+  
+  # Packet buffer size (bytes)
+  buffer_size: 65536
+  
+  # Number of worker threads for packet processing
+  num_workers: 4
+  
+  # Packet queue size
+  queue_size: 10000
+  
+  # Block external ICMP echo requests (ping)
+  block_external_ping: true
+  
+  # Enable stateful connection tracking
+  enable_stateful: true
+  
+  # Maximum concurrent connections
+  max_connections: 100000
+  
+  # Connection timeout (seconds)
+  connection_timeout: 300
+  
+  # Enable NAT tracking
+  enable_nat: false
+  
+  # Enable detailed logging
+  enable_logging: true
+  
+  # Default action for unmatched packets
+  default_action: "allow"  # allow, drop, reject
+  
+  # Internal network ranges (CIDR notation)
+  internal_networks:
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+    - "192.168.0.0/16"
+    - "127.0.0.0/8"
+  
+  # IP whitelist (never block)
+  whitelist:
+    - "127.0.0.1"
+    - "::1"
+  
+  # IP blacklist (always block)
+  blacklist: []
+
+# Intrusion Detection Configuration
+detection:
+  # Enable IDS engine
+  enable_ids: true
+  
+  # Enable anomaly detection
+  enable_anomaly: true
+  
+  # Enable threat intelligence
+  enable_threat_intel: true
+  
+  # Signature directory
+  signature_dir: "/etc/soc-firewall/signatures"
+  
+  # Detection thresholds
+  thresholds:
+    # Port scan: ports per source
+    port_scan: 50
+    
+    # SYN flood: SYNs per second
+    syn_flood: 100
+    
+    # DoS: packets per second
+    dos: 1000
+    
+    # Brute force: attempts per minute
+    bruteforce: 10
+    
+    # ICMP flood: packets per second
+    icmp_flood: 50
+    
+    # Connection rate: new connections per second
+    connection_rate: 500
+  
+  # Protocol analysis
+  check_protocol_anomalies: true
+  check_payload: true
+  max_payload_size: 65535
+  
+  # Machine learning (experimental)
+  enable_ml: false
+  model_path: "/etc/soc-firewall/models"
+  training_interval: 86400  # 24 hours
+
+# Automated Response Configuration
+response:
+  # Enable automated incident response
+  enable_auto_response: true
+  
+  # Enable IP quarantine
+  enable_quarantine: true
+  
+  # Default quarantine duration (seconds)
+  quarantine_default_duration: 3600  # 1 hour
+  
+  # Enable alerting
+  enable_alerting: true
+  
+  # Enable notifications
+  enable_notifications: true
+  
+  # Alert channels (log, email, slack, webhook)
+  alert_channels:
+    - "log"
+    - "email"
+  
+  # Email configuration
+  email:
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    from_addr: "soc-firewall@yourdomain.com"
+    to_addrs:
+      - "security-team@yourdomain.com"
+    username: "${SMTP_USERNAME}"
+    password: "${SMTP_PASSWORD}"
+    use_tls: true
+  
+  # Slack configuration
+  slack:
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#security-alerts"
+    username: "SOC Firewall"
+  
+  # Webhook configuration
+  webhook:
+    url: "${WEBHOOK_URL}"
+    headers:
+      Content-Type: "application/json"
+      X-API-Key: "${WEBHOOK_API_KEY}"
+    method: "POST"
+  
+  # Playbook directory
+  playbook_dir: "/etc/soc-firewall/playbooks"
+
+# API Configuration
+api:
+  # REST API
+  enable_rest_api: true
+  rest_host: "127.0.0.1"  # Bind to localhost only
+  rest_port: 5000
+  rest_debug: false
+  
+  # WebSocket for real-time events
+  enable_websocket: true
+  websocket_host: "127.0.0.1"
+  websocket_port: 8765
+  
+  # Authentication
+  enable_auth: true
+  token_expiry: 86400  # 24 hours
+  
+  # API Tokens (generated during deployment)
+  # Store in environment variables or secure vault
+  api_tokens: {}
+  
+  # CORS
+  enable_cors: true
+  allowed_origins:
+    - "https://soc.yourdomain.com"
+    - "http://localhost:3000"
+  
+  # Rate limiting
+  enable_rate_limit: true
+  rate_limit: 100  # requests per minute per IP
+  
+  # SSL/TLS (for production)
+  ssl_cert: "/etc/ssl/certs/soc-firewall.crt"
+  ssl_key: "/etc/ssl/private/soc-firewall.key"
+  ssl_enabled: false  # Set to true if using HTTPS
+
+# Logging Configuration
+logging:
+  # Log directory
+  log_dir: "/var/log/soc-firewall"
+  
+  # Log level: debug, info, warning, error, critical
+  log_level: "info"
+  
+  # Log format: json or text
+  log_format: "json"
+  
+  # Maximum log file size before rotation (bytes)
+  max_log_size: 10485760  # 10MB
+  
+  # Number of backup log files to keep
+  backup_count: 5
+  
+  # Output to console (in addition to file)
+  console_output: false
+  
+  # Audit logging (separate file)
+  enable_audit: true
+  audit_log_size: 10485760  # 10MB
+  audit_backup_count: 10
+
+# Threat Intelligence Feeds
+threat_intel:
+  # Enable threat intelligence
+  enabled: true
+  
+  # Database path
+  db_path: "/var/lib/soc-firewall/threat_intel.db"
+  
+  # Update interval (seconds)
+  update_interval: 3600  # 1 hour
+  
+  # Feed configuration
+  feeds:
+    - name: "Firehol Level 1"
+      url: "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level1.netset"
+      type: "ip"
+      format: "txt"
+      enabled: true
+      confidence: 0.8
+    
+    - name: "Firehol Level 2"
+      url: "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level2.netset"
+      type: "ip"
+      format: "txt"
+      enabled: true
+      confidence: 0.7
+    
+    - name: "MalwareDomains"
+      url: "https://mirror1.malwaredomains.com/files/justdomains"
+      type: "domain"
+      format: "txt"
+      enabled: true
+      confidence: 0.8
+    
+    - name: "Emerging Threats Compromised"
+      url: "https://rules.emergingthreats.net/blockrules/compromised-ips.txt"
+      type: "ip"
+      format: "txt"
+      enabled: true
+      confidence: 0.9
+    
+    - name: "CINSscore"
+      url: "https://cinsscore.com/list/ci-badguys.txt"
+      type: "ip"
+      format: "txt"
+      enabled: true
+      confidence: 0.8
+    
+    - name: "Blocklist.de"
+      url: "https://lists.blocklist.de/lists/all.txt"
+      type: "ip"
+      format: "txt"
+      enabled: true
+      confidence: 0.7
+    
+    - name: "Spamhaus DROP"
+      url: "https://www.spamhaus.org/drop/drop.txt"
+      type: "ip"
+      format: "txt"
+      enabled: true
+      confidence: 0.9
+    
+    - name: "SSL Blacklist"
+      url: "https://sslbl.abuse.ch/blacklist/sslipblacklist.csv"
+      type: "ip"
+      format: "csv"
+      enabled: true
+      confidence: 0.8
+
+# Performance Tuning
+performance:
+  # CPU affinity for worker threads
+  cpu_affinity: []
+  
+  # Memory limits
+  memory_limit_mb: 1024
+  
+  # File descriptor limits
+  max_open_files: 65536
+  
+  # Network buffer sizes
+  socket_buffer_size: 212992
+  socket_rcvbuf: 212992
+  socket_sndbuf: 212992
+  
+  # Garbage collection
+  gc_threshold: 10000
+  gc_interval: 300  # seconds
+
+# High Availability (optional)
+ha:
+  # Enable clustering
+  enabled: false
+  
+  # Node ID (unique per node)
+  node_id: "node1"
+  
+  # Cluster peers
+  peers:
+    - "192.168.1.10:5000"
+    - "192.168.1.11:5000"
+  
+  # Sync interval (seconds)
+  sync_interval: 60
+  
+  # Failover timeout (seconds)
+  failover_timeout: 30
+
+# Security Hardening
+security:
+  # Drop privileges after startup
+  drop_privileges: true
+  run_as_user: "socfw"
+  run_as_group: "socfw"
+  
+  # Chroot jail (optional)
+  chroot_dir: "/var/empty"
+  
+  # Seccomp filtering
+  enable_seccomp: true
+  
+  # AppArmor/SELinux profile
+  apparmor_profile: "soc-firewall"
+  
+  # Capabilities to retain
+  capabilities:
+    - "CAP_NET_ADMIN"
+    - "CAP_NET_RAW"
+    - "CAP_NET_BIND_SERVICE"
+  
+  # Masked environment variables
+  masked_env_vars:
+    - "SMTP_PASSWORD"
+    - "SLACK_WEBHOOK_URL"
+    - "WEBHOOK_API_KEY"
