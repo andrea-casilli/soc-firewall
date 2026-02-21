@@ -1,0 +1,6 @@
+# SOC Firewall - Main requirements file
+# Select environment with REQUIREMENTS_ENV variable
+# Usage: pip install -r requirements.txt
+
+# Default to production if not specified
+-r requirements/production.txt
