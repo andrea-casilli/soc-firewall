@@ -1,0 +1,495 @@
+# SOC Firewall Base Rules
+# Core filtering rules for all environments
+# Version: 1.0.0
+
+# Rule format:
+# - name: Unique rule name
+#   action: ALLOW|DROP|REJECT|LOG|ALERT
+#   priority: 1-1000 (lower = higher priority)
+#   enabled: true|false
+#   description: Human-readable description
+#   conditions:
+#     - field: packet field to check
+#       operator: eq|ne|gt|lt|in|contains|matches|cidr
+#       value: value to compare
+#   tags: [optional tags]
+
+rules:
+  # ========================================
+  # ICMP/Ping Rules (Priority 10-19)
+  # ========================================
+  
+  - name: "block_external_ping"
+    action: "DROP"
+    priority: 10
+    enabled: true
+    description: "Block ICMP echo requests from external networks"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "ICMP"
+      - field: "flags"
+        operator: "contains"
+        value: "type=8"
+      - field: "src_ip"
+        operator: "cidr"
+        value: "0.0.0.0/0"
+      - field: "src_ip"
+        operator: "not_cidr"
+        value: "192.168.0.0/16"
+      - field: "src_ip"
+        operator: "not_cidr"
+        value: "10.0.0.0/8"
+      - field: "src_ip"
+        operator: "not_cidr"
+        value: "172.16.0.0/12"
+    tags: ["icmp", "ping", "security"]
+
+  - name: "allow_internal_ping"
+    action: "ALLOW"
+    priority: 20
+    enabled: true
+    description: "Allow ICMP echo requests from internal networks"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "ICMP"
+      - field: "flags"
+        operator: "contains"
+        value: "type=8"
+      - field: "src_ip"
+        operator: "cidr"
+        value: "192.168.0.0/16"
+    tags: ["icmp", "ping", "internal"]
+
+  - name: "allow_internal_ping_10"
+    action: "ALLOW"
+    priority: 20
+    enabled: true
+    description: "Allow ICMP echo requests from 10.0.0.0/8"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "ICMP"
+      - field: "flags"
+        operator: "contains"
+        value: "type=8"
+      - field: "src_ip"
+        operator: "cidr"
+        value: "10.0.0.0/8"
+    tags: ["icmp", "ping", "internal"]
+
+  - name: "allow_internal_ping_172"
+    action: "ALLOW"
+    priority: 20
+    enabled: true
+    description: "Allow ICMP echo requests from 172.16.0.0/12"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "ICMP"
+      - field: "flags"
+        operator: "contains"
+        value: "type=8"
+      - field: "src_ip"
+        operator: "cidr"
+        value: "172.16.0.0/12"
+    tags: ["icmp", "ping", "internal"]
+
+  - name: "allow_localhost_ping"
+    action: "ALLOW"
+    priority: 5
+    enabled: true
+    description: "Always allow ping from localhost"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "ICMP"
+      - field: "flags"
+        operator: "contains"
+        value: "type=8"
+      - field: "src_ip"
+        operator: "eq"
+        value: "127.0.0.1"
+    tags: ["icmp", "ping", "localhost"]
+
+  - name: "rate_limit_icmp"
+    action: "LOG"
+    priority: 15
+    enabled: true
+    description: "Log excessive ICMP traffic"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "ICMP"
+      - field: "packet_rate"
+        operator: "gt"
+        value: 10
+    tags: ["icmp", "rate_limit", "monitoring"]
+
+  # ========================================
+  # TCP Service Rules (Priority 20-39)
+  # ========================================
+
+  - name: "allow_ssh_internal"
+    action: "ALLOW"
+    priority: 30
+    enabled: true
+    description: "Allow SSH from internal networks"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 22
+      - field: "src_ip"
+        operator: "cidr"
+        value: "192.168.0.0/16"
+    tags: ["ssh", "internal", "management"]
+
+  - name: "block_ssh_external"
+    action: "DROP"
+    priority: 40
+    enabled: true
+    description: "Block SSH from external networks"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 22
+      - field: "src_ip"
+        operator: "cidr"
+        value: "0.0.0.0/0"
+      - field: "src_ip"
+        operator: "not_cidr"
+        value: "192.168.0.0/16"
+      - field: "src_ip"
+        operator: "not_cidr"
+        value: "10.0.0.0/8"
+      - field: "src_ip"
+        operator: "not_cidr"
+        value: "172.16.0.0/12"
+    tags: ["ssh", "external", "security"]
+
+  - name: "allow_web_traffic"
+    action: "ALLOW"
+    priority: 50
+    enabled: true
+    description: "Allow HTTP/HTTPS traffic"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "in"
+        value: [80, 443, 8080, 8443]
+    tags: ["web", "http", "https"]
+
+  - name: "allow_dns"
+    action: "ALLOW"
+    priority: 60
+    enabled: true
+    description: "Allow DNS queries"
+    conditions:
+      - field: "protocol"
+        operator: "in"
+        value: ["TCP", "UDP"]
+      - field: "dst_port"
+        operator: "eq"
+        value: 53
+    tags: ["dns", "resolution"]
+
+  - name: "allow_dhcp"
+    action: "ALLOW"
+    priority: 70
+    enabled: true
+    description: "Allow DHCP traffic"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "UDP"
+      - field: "dst_port"
+        operator: "in"
+        value: [67, 68]
+    tags: ["dhcp", "network"]
+
+  - name: "allow_smtp"
+    action: "ALLOW"
+    priority: 80
+    enabled: true
+    description: "Allow SMTP email traffic"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "in"
+        value: [25, 465, 587]
+    tags: ["email", "smtp"]
+
+  - name: "allow_imap_pop"
+    action: "ALLOW"
+    priority: 90
+    enabled: true
+    description: "Allow email retrieval"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "in"
+        value: [110, 143, 993, 995]
+    tags: ["email", "imap", "pop3"]
+
+  - name: "allow_ftp"
+    action: "ALLOW"
+    priority: 100
+    enabled: false  # FTP is insecure, disabled by default
+    description: "Allow FTP control channel"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 21
+    tags: ["ftp", "legacy"]
+
+  # ========================================
+  # Database Rules (Priority 200-219)
+  # ========================================
+
+  - name: "allow_mysql_internal"
+    action: "ALLOW"
+    priority: 200
+    enabled: true
+    description: "Allow MySQL from internal networks only"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 3306
+      - field: "src_ip"
+        operator: "cidr"
+        value: "192.168.0.0/16"
+    tags: ["database", "mysql"]
+
+  - name: "allow_postgresql_internal"
+    action: "ALLOW"
+    priority: 210
+    enabled: true
+    description: "Allow PostgreSQL from internal networks only"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 5432
+      - field: "src_ip"
+        operator: "cidr"
+        value: "192.168.0.0/16"
+    tags: ["database", "postgresql"]
+
+  - name: "allow_mongodb_internal"
+    action: "ALLOW"
+    priority: 220
+    enabled: true
+    description: "Allow MongoDB from internal networks only"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 27017
+      - field: "src_ip"
+        operator: "cidr"
+        value: "192.168.0.0/16"
+    tags: ["database", "mongodb"]
+
+  - name: "allow_redis_internal"
+    action: "ALLOW"
+    priority: 230
+    enabled: true
+    description: "Allow Redis from internal networks only"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 6379
+      - field: "src_ip"
+        operator: "cidr"
+        value: "192.168.0.0/16"
+    tags: ["database", "redis"]
+
+  # ========================================
+  # Security and Monitoring (Priority 300-319)
+  # ========================================
+
+  - name: "allow_snmp_monitoring"
+    action: "ALLOW"
+    priority: 300
+    enabled: true
+    description: "Allow SNMP from monitoring systems"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "UDP"
+      - field: "dst_port"
+        operator: "in"
+        value: [161, 162]
+      - field: "src_ip"
+        operator: "in"
+        value: ["192.168.1.100", "192.168.1.101"]
+    tags: ["monitoring", "snmp"]
+
+  - name: "allow_syslog"
+    action: "ALLOW"
+    priority: 310
+    enabled: true
+    description: "Allow syslog traffic to log server"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "UDP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 514
+      - field: "dst_ip"
+        operator: "eq"
+        value: "192.168.1.50"
+    tags: ["logging", "syslog"]
+
+  - name: "allow_ntp"
+    action: "ALLOW"
+    priority: 320
+    enabled: true
+    description: "Allow NTP time synchronization"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "UDP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 123
+    tags: ["ntp", "time"]
+
+  # ========================================
+  # Block Malicious Traffic (Priority 400-419)
+  # ========================================
+
+  - name: "block_known_malicious_ips"
+    action: "DROP"
+    priority: 400
+    enabled: true
+    description: "Block known malicious IPs from threat intelligence"
+    conditions:
+      - field: "src_ip"
+        operator: "in_threat_intel"
+        value: "malicious"
+    tags: ["threat_intel", "malicious", "security"]
+
+  - name: "block_tor_exit_nodes"
+    action: "DROP"
+    priority: 410
+    enabled: false  # Enable if you want to block Tor
+    description: "Block Tor exit nodes"
+    conditions:
+      - field: "src_ip"
+        operator: "in_threat_intel"
+        value: "tor_exit"
+    tags: ["tor", "anonymity"]
+
+  - name: "block_common_attack_ports"
+    action: "DROP"
+    priority: 420
+    enabled: true
+    description: "Block commonly targeted ports"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "in"
+        value: [135, 137, 138, 139, 445, 1433, 1434, 3389, 5900, 5901]
+    tags: ["attack", "security", "windows"]
+
+  - name: "block_high_ports_inbound"
+    action: "DROP"
+    priority: 430
+    enabled: true
+    description: "Block inbound connections to high ports"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "gt"
+        value: 32768
+      - field: "direction"
+        operator: "eq"
+        value: "inbound"
+    tags: ["ports", "security"]
+
+  # ========================================
+  # Rate Limiting Rules (Priority 500-519)
+  # ========================================
+
+  - name: "rate_limit_connections"
+    action: "LOG"
+    priority: 500
+    enabled: true
+    description: "Log excessive connection attempts"
+    conditions:
+      - field: "connection_rate"
+        operator: "gt"
+        value: 100
+    tags: ["rate_limit", "dos"]
+
+  - name: "rate_limit_syn"
+    action: "LOG"
+    priority: 510
+    enabled: true
+    description: "Log excessive SYN packets"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "flags"
+        operator: "contains"
+        value: "SYN"
+      - field: "syn_rate"
+        operator: "gt"
+        value: 50
+    tags: ["syn_flood", "dos"]
+
+  # ========================================
+  # Default Rules (Priority 900-999)
+  # ========================================
+
+  - name: "log_all_traffic"
+    action: "LOG"
+    priority: 900
+    enabled: false  # Enable only for debugging
+    description: "Log all traffic (debug only)"
+    conditions:
+      - field: "protocol"
+        operator: "ne"
+        value: "unknown"
+    tags: ["debug", "logging"]
+
+  - name: "default_allow"
+    action: "ALLOW"
+    priority: 1000
+    enabled: true
+    description: "Default allow rule (lowest priority)"
+    conditions: []
+    tags: ["default"]
