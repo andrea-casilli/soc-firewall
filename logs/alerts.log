@@ -1,0 +1,35 @@
+# SOC Firewall Alerts Log
+# JSON format for structured alert logging
+# Each line is a complete JSON object
+
+{"timestamp": "2024-01-15T08:23:45.123Z", "alert_id": "ALT-1705123456-0001", "severity": "high", "source": "ids", "title": "SQL Injection Attempt", "message": "Detected UNION SELECT SQL injection pattern", "signature_id": "SQLI-001", "signature_name": "SQL Injection - UNION SELECT", "category": "sql_injection", "src_ip": "203.0.113.10", "dst_ip": "192.168.1.100", "dst_port": 80, "protocol": "TCP", "tags": ["web", "attack", "sql"], "acknowledged": false, "details": {"uri": "/page.php?id=1", "payload": "UNION SELECT * FROM users"}}
+
+{"timestamp": "2024-01-15T08:24:12.456Z", "alert_id": "ALT-1705123456-0002", "severity": "critical", "source": "ids", "title": "Port Scan Detected", "message": "Systematic port scan from external IP", "signature_id": "BEH-001", "signature_name": "Port Scan Detected", "category": "reconnaissance", "src_ip": "198.51.100.45", "dst_ip": "192.168.1.100", "protocol": "TCP", "tags": ["scan", "recon", "external"], "acknowledged": false, "details": {"ports_scanned": 250, "duration_seconds": 30, "first_port": 1, "last_port": 1024}}
+
+{"timestamp": "2024-01-15T08:24:45.789Z", "alert_id": "ALT-1705123456-0003", "severity": "medium", "source": "anomaly", "title": "Unusual Traffic Pattern", "message": "Abnormal outbound traffic detected", "category": "anomaly", "src_ip": "192.168.1.150", "dst_ip": "203.0.113.20", "dst_port": 443, "protocol": "TCP", "tags": ["anomaly", "outbound", "investigate"], "acknowledged": true, "acknowledged_by": "analyst@example.com", "acknowledged_at": "2024-01-15T08:26:30.123Z", "details": {"bytes_sent": 15000000, "packets_sent": 25000, "duration": 300, "baseline_ratio": 15.5}}
+
+{"timestamp": "2024-01-15T08:25:30.123Z", "alert_id": "ALT-1705123456-0004", "severity": "high", "source": "ids", "title": "XSS Attack Attempt", "message": "Cross-site scripting attempt detected", "signature_id": "XSS-001", "signature_name": "Cross-Site Scripting - Script Tag", "category": "xss", "src_ip": "203.0.113.15", "dst_ip": "192.168.1.100", "dst_port": 443, "protocol": "TCP", "tags": ["web", "xss", "attack"], "acknowledged": false, "details": {"uri": "/comment.php", "payload": "<script>alert('xss')</script>"}}
+
+{"timestamp": "2024-01-15T08:26:15.456Z", "alert_id": "ALT-1705123456-0005", "severity": "critical", "source": "threat_intel", "title": "Known Malicious IP", "message": "Connection from known malicious IP address", "category": "threat_intel", "src_ip": "185.130.5.133", "dst_ip": "192.168.1.100", "dst_port": 22, "protocol": "TCP", "tags": ["malicious", "threat_feed", "ssh"], "acknowledged": false, "details": {"threat_feed": "firehol_level1", "confidence": 0.95, "first_seen": "2024-01-10T12:00:00Z"}}
+
+{"timestamp": "2024-01-15T08:27:00.789Z", "alert_id": "ALT-1705123456-0006", "severity": "medium", "source": "ids", "title": "Directory Traversal Attempt", "message": "Directory traversal pattern detected", "signature_id": "DIR-001", "signature_name": "Directory Traversal - Dot Dot Slash", "category": "directory_traversal", "src_ip": "203.0.113.25", "dst_ip": "192.168.1.100", "dst_port": 80, "protocol": "TCP", "tags": ["web", "traversal", "attack"], "acknowledged": false, "details": {"uri": "/../../../../etc/passwd"}}
+
+{"timestamp": "2024-01-15T08:27:45.123Z", "alert_id": "ALT-1705123456-0007", "severity": "high", "source": "ids", "title": "SYN Flood Detected", "message": "Possible SYN flood attack", "signature_id": "BEH-002", "signature_name": "SYN Flood Detected", "category": "dos", "src_ip": "198.51.100.67", "dst_ip": "192.168.1.100", "dst_port": 80, "protocol": "TCP", "tags": ["dos", "flood", "attack"], "acknowledged": true, "acknowledged_by": "soc_analyst", "acknowledged_at": "2024-01-15T08:29:30.456Z", "details": {"syn_rate": 2500, "duration_seconds": 15, "total_syn": 37500}}
+
+{"timestamp": "2024-01-15T08:28:30.456Z", "alert_id": "ALT-1705123456-0008", "severity": "low", "source": "ids", "title": "ICMP Timestamp Request", "message": "ICMP timestamp request detected", "signature_id": "ICMP-001", "signature_name": "ICMP Timestamp Request", "category": "information_leak", "src_ip": "203.0.113.30", "dst_ip": "192.168.1.100", "protocol": "ICMP", "tags": ["icmp", "recon", "low"], "acknowledged": false, "details": {"icmp_type": 13, "icmp_code": 0}}
+
+{"timestamp": "2024-01-15T08:29:15.789Z", "alert_id": "ALT-1705123456-0009", "severity": "critical", "source": "ids", "title": "Brute Force Attack - SSH", "message": "Multiple SSH authentication failures", "signature_id": "BEH-005", "signature_name": "Brute Force Attack - SSH", "category": "bruteforce", "src_ip": "185.225.17.45", "dst_ip": "192.168.1.100", "dst_port": 22, "protocol": "TCP", "tags": ["ssh", "bruteforce", "critical"], "acknowledged": false, "details": {"attempts": 150, "time_window": 60, "last_username": "root"}}
+
+{"timestamp": "2024-01-15T08:30:00.123Z", "alert_id": "ALT-1705123456-0010", "severity": "medium", "source": "anomaly", "title": "Data Exfiltration Attempt", "message": "Large outbound data transfer detected", "category": "data_loss", "src_ip": "192.168.1.180", "dst_ip": "45.33.22.11", "dst_port": 443, "protocol": "TCP", "tags": ["exfiltration", "data_loss", "investigate"], "acknowledged": false, "details": {"bytes_transferred": 500000000, "duration": 300, "destination_geo": "Unknown"}}
+
+{"timestamp": "2024-01-15T09:00:00.000Z", "alert_id": "SUMMARY-1705125600", "severity": "info", "source": "system", "title": "Hourly Alert Summary", "message": "Summary of alerts in last hour", "category": "summary", "tags": ["summary", "hourly"], "acknowledged": false, "details": {"total_alerts": 45, "by_severity": {"critical": 5, "high": 12, "medium": 18, "low": 10}, "top_sources": ["203.0.113.10", "198.51.100.45", "185.130.5.133"], "top_signatures": ["SQLI-001", "BEH-001", "BEH-005"]}}
+
+# Daily Summary - 2024-01-15
+# Total Alerts: 345
+# Critical: 23
+# High: 78
+# Medium: 145
+# Low: 99
+# Acknowledged: 287
+# Unacknowledged: 58
+# Mean Time to Acknowledge: 4.5 minutes
