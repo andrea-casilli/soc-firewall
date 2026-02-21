@@ -1,0 +1,199 @@
+# SOC Firewall Development Requirements
+# Tools and dependencies for development environment
+# Version: 1.0.0
+
+# Include base requirements
+-r base.txt
+
+# Development web server
+werkzeug==3.0.1  # Debug mode enabled
+
+# Testing frameworks
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-xdist==3.5.0  # Parallel testing
+pytest-mock==3.12.0
+pytest-timeout==2.2.0
+pytest-benchmark==4.0.0
+pytest-asyncio==0.21.1
+pytest-socket==0.6.0
+pytest-env==1.1.3
+pytest-random-order==1.1.1
+
+# Testing utilities
+factory-boy==3.3.0
+faker==20.1.0
+model-mommy==2.0.0
+mixer==7.2.2
+
+# Mocking
+responses==0.24.1
+requests-mock==1.11.0
+mock==5.1.0
+pook==1.2.0
+
+# Coverage
+coverage==7.4.0
+pytest-cov==4.1.0
+coveralls==3.3.1
+
+# Code quality
+black==23.12.1
+isort==5.13.2
+flake8==7.0.0
+flake8-docstrings==1.7.0
+flake8-bugbear==23.12.2
+flake8-comprehensions==3.14.0
+pylint==3.0.3
+pylint-django==2.5.5
+mypy==1.8.0
+pyright==1.1.345
+pre-commit==3.6.0
+autopep8==2.0.4
+yapf==0.40.2
+
+# Type checking
+types-requests==2.31.0.10
+types-pyyaml==6.0.12.12
+types-redis==4.6.0.11
+types-setuptools==69.0.0.0
+types-click==7.1.8
+
+# Debugging
+ipdb==0.13.13
+ipython==8.19.0
+pdbpp==0.10.3
+py-spy==0.3.14
+debugpy==1.8.0
+ptvsd==4.3.2
+
+# Profiling
+py-spy==0.3.14
+memory-profiler==0.61.0
+line-profiler==4.1.1
+cProfile  # Built-in
+snakeviz==2.2.0  # Profile visualization
+
+# API development
+flask-restx==1.3.0  # Swagger documentation
+apispec==6.4.0
+marshmallow==3.20.1
+webargs==8.3.0
+
+# Database tools (development)
+flask-migrate==4.0.5
+flask-sqlalchemy==3.1.1
+sqlalchemy-utils==0.41.1
+
+# Database clients (development)
+sqlite-web==0.4.0
+pgcli==4.0.1
+mycli==1.26.1
+
+# Environment variables
+python-dotenv==1.0.0
+direnv==0.1.0
+
+# Hot reload
+watchdog==3.0.0
+hupper==1.12
+
+# LSP support
+python-lsp-server==1.9.0
+pylsp-mypy==0.6.8
+pyls-isort==0.2.2
+
+# Documentation generation
+sphinx==7.2.6
+sphinx-autobuild==2021.3.14
+sphinx-rtd-theme==1.3.0
+sphinxcontrib-napoleon==0.7
+recommonmark==0.7.1
+sphinx-markdown-tables==0.0.17
+m2r2==0.3.3
+sphinx-copybutton==0.5.2
+
+# API documentation
+swagger-ui-bundle==1.1.0
+redoc==2.0.0
+
+# Performance testing
+locust==2.20.0
+boom==2.3.0
+siege==4.1.6  # System dependency
+
+# Security testing
+bandit==1.7.5
+safety==2.3.5
+vulture==2.10
+pyupio==1.0.0
+snyk==1.1230.0  # Optional, requires API key
+
+# Container development
+docker==7.0.0
+docker-compose==2.23.3
+
+# Git hooks
+pre-commit==3.6.0
+pre-commit-hooks==4.5.0
+
+# Jupyter notebooks (for analysis)
+jupyter==1.0.0
+notebook==7.0.7
+ipykernel==6.27.1
+matplotlib==3.8.2
+seaborn==0.13.0
+plotly==5.18.0
+
+# Graph visualization
+graphviz==0.20.1
+pygraphviz==1.11
+
+# Code metrics
+radon==6.0.1
+xenon==0.9.1
+pycodestyle==2.11.1
+pydocstyle==6.3.0
+
+# Changelog generation
+auto-changelog==0.5.1
+semantic-version==2.10.0
+
+# Dependency management
+pip-tools==7.3.0
+poetry==1.7.1  # Alternative package manager
+
+# Database seeding
+faker==20.1.0
+faker-vehicle==0.3.0
+
+# Development utilities
+httpie==3.2.2
+jq==1.7.1
+yq==3.2.3
+jmespath==1.0.1
+
+# WebSocket testing
+websocat==1.12.0  # System dependency
+wscat==6.0.0
+
+# GraphQL development
+graphene==3.3
+graphql-core==3.2.3
+
+# Monitoring development
+flask-debugtoolbar==4.3.2
+django-debug-toolbar==4.2.0  # If using Django
+
+# Database migration testing
+testcontainers==4.0.0
+
+# Chaos engineering
+chaostoolkit==1.26.0
+chaostoolkit-aws==1.0.0
+chaostoolkit-kubernetes==0.26.0
+
+# Network testing
+scapy==2.5.0  # Already in base
+pcapy==1.0.2
+dpkt==1.9.8
