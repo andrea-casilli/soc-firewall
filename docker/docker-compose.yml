@@ -1,0 +1,274 @@
+# SOC Firewall Docker Compose Configuration
+# Version: 3.8
+
+version: '3.8'
+
+services:
+  # Main SOC Firewall service
+  soc-firewall:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: ${TARGET:-production}
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VERSION: ${VERSION:-1.0.0}
+        VCS_REF: ${VCS_REF:-}
+    image: soc-firewall:${TAG:-latest}
+    container_name: soc-firewall
+    restart: unless-stopped
+    network_mode: host  # Required for packet capture
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - NET_BIND_SERVICE
+    environment:
+      - TZ=UTC
+      - SOC_FW_CONFIG=/etc/soc-firewall/${CONFIG_FILE:-production.yaml}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - PAGERDUTY_API_KEY=${PAGERDUTY_API_KEY}
+    volumes:
+      - ./config:/etc/soc-firewall:ro
+      - ./data:/var/lib/soc-firewall
+      - ./logs:/var/log/soc-firewall
+      - /etc/localtime:/etc/localtime:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/v1/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - soc-network
+    depends_on:
+      - redis
+      - postgres
+
+  # Redis for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: soc-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - soc-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # PostgreSQL for persistent storage (optional)
+  postgres:
+    image: postgres:15-alpine
+    container_name: soc-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=socfirewall
+      - POSTGRES_USER=socfw
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-socfw123}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - soc-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U socfw"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Elasticsearch for log aggregation (optional)
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: soc-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+    volumes:
+      - elastic-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - soc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Kibana for visualization (optional)
+  kibana:
+    image: kibana:8.11.0
+    container_name: soc-kibana
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - soc-network
+    depends_on:
+      - elasticsearch
+
+  # Grafana for metrics dashboard (optional)
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: soc-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    networks:
+      - soc-network
+    depends_on:
+      - prometheus
+
+  # Prometheus for metrics collection (optional)
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: soc-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    networks:
+      - soc-network
+
+  # Nginx reverse proxy (optional)
+  nginx:
+    image: nginx:alpine
+    container_name: soc-nginx
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - soc-network
+    depends_on:
+      - soc-firewall
+      - kibana
+      - grafana
+
+  # Portainer for container management (optional)
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: soc-portainer
+    restart: unless-stopped
+    command: -H unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data
+    ports:
+      - "9000:9000"
+    networks:
+      - soc-network
+
+# Networks
+networks:
+  soc-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Volumes
+volumes:
+  redis-data:
+    driver: local
+  postgres-data:
+    driver: local
+  elastic-data:
+    driver: local
+  grafana-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  portainer-data:
+    driver: local
+
+# Development override
+x-development: &development
+  build:
+    target: development
+  volumes:
+    - ../src:/app/src:rw
+    - ../tests:/app/tests:rw
+    - ../config:/etc/soc-firewall:rw
+  environment:
+    - FLASK_ENV=development
+    - PYTHONBREAKPOINT=ipdb.set_trace
+  ports:
+    - "5678:5678"  # Debug port
+
+# Testing override
+x-test: &test
+  build:
+    target: test
+  volumes:
+    - ../src:/app/src:ro
+    - ../tests:/app/tests:ro
+    - ../.coveragerc:/app/.coveragerc:ro
+  command: pytest tests/ -v --cov=src --cov-report=html --cov-report=xml
+
+# Profiles
+profiles:
+  - production
+  - development
+  - monitoring
+  - test
+
+# Services with profiles
+services:
+  # Override for development
+  soc-firewall-dev:
+    <<: *development
+    extends:
+      service: soc-firewall
+    profiles: ["development"]
+
+  # Override for testing
+  soc-firewall-test:
+    <<: *test
+    extends:
+      service: soc-firewall
+    profiles: ["test"]
+
+  # Monitoring stack profile
+  monitoring:
+    services:
+      - elasticsearch
+      - kibana
+      - prometheus
+      - grafana
+    profiles: ["monitoring"]
