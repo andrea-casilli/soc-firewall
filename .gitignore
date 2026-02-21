@@ -1,0 +1,240 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
+*.venv
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.pydevproject
+.settings/
+*.sublime-*
+*.code-workspace
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+pip-selfcheck.json
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+test-reports/
+junit/
+*.log
+test-results.xml
+benchmark-results.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.rdb
+
+# Logs
+logs/
+*.log
+access.log
+error.log
+audit.log
+alerts.log
+soc_firewall.log
+
+# Data files
+data/
+*.data
+*.dat
+*.csv
+*.json
+!config/*.json
+!config/*.yaml
+
+# Configuration files
+config/*.local.yaml
+config/*.local.yml
+config/development.yaml
+config/staging.yaml
+config/production.local.yaml
+!config/production.yaml
+!config/rules/*.yaml
+!config/alerting/*.yaml
+
+# Secrets and keys
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx
+*.keystore
+*.truststore
+secrets/
+!ssl/*.crt
+!ssl/*.key
+.env
+.env.*
+!.env.example
+*.env.local
+*.env.development
+*.env.production
+*.env.test
+secrets.yaml
+secrets.yml
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+*.tar
+*.gz
+*.tgz
+
+# Kubernetes
+k8s/
+helm/
+charts/
+*.kubeconfig
+
+# Terraform
+terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+terraform.tfplan
+terraform.tfstate.backup
+
+# Ansible
+ansible/
+*.retry
+*.retry.json
+inventory/
+
+# Vagrant
+.vagrant/
+Vagrantfile
+Vagrantfile.local
+
+# System files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.bak
+*.old
+*.orig
+
+# Documentation
+docs/_build/
+docs/_static/
+docs/_templates/
+site/
+
+# Project specific
+*.pid
+*.sock
+*.lock
+*.pid.lock
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dylib
+*.dll
+
+# Editor directories and files
+*.vscode/
+*.idea/
+*.vs/
+*.vscode
+*.history
+*.ionide
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+!examples/*.ipynb
+
+# Profiling data
+*.prof
+*.stats
+*.callgrind
+*.cachegrind
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.cache
+*.pid
+*.seed
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+ehthumbs.db
+ehthumbs_vista.db
+Thumbs.db
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
