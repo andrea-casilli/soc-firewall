@@ -245,12 +245,6 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 - Flask for API framework
 - All contributors and supporters
 
-## Support
-
-- **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/yourorg/soc-firewall/issues)
-- **Email**: soc@example.com
-- **Slack**: #soc-firewall-support
 
 ## Roadmap
 
