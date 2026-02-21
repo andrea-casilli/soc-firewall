@@ -1,0 +1,363 @@
+# SOC Firewall Custom Rules
+# Site-specific filtering rules
+# Version: 1.0.0
+
+# This file is for custom rules specific to your deployment
+# Override or extend base rules here
+
+rules:
+  # ========================================
+  # Organization-specific IP Ranges
+  # ========================================
+  
+  - name: "allow_vpn_users"
+    action: "ALLOW"
+    priority: 25  # Higher than internal rules
+    enabled: true
+    description: "Allow VPN users (10.200.0.0/16)"
+    conditions:
+      - field: "src_ip"
+        operator: "cidr"
+        value: "10.200.0.0/16"
+    tags: ["vpn", "remote_access"]
+
+  - name: "allow_office_branch"
+    action: "ALLOW"
+    priority: 26
+    enabled: true
+    description: "Allow branch office (172.20.0.0/16)"
+    conditions:
+      - field: "src_ip"
+        operator: "cidr"
+        value: "172.20.0.0/16"
+    tags: ["branch", "office"]
+
+  # ========================================
+  # Application-specific Rules
+  # ========================================
+
+  - name: "allow_jenkins"
+    action: "ALLOW"
+    priority: 150
+    enabled: true
+    description: "Allow Jenkins CI/CD"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 8080
+      - field: "src_ip"
+        operator: "cidr"
+        value: "192.168.50.0/24"  # Developers subnet
+    tags: ["jenkins", "ci", "cd"]
+
+  - name: "allow_gitlab"
+    action: "ALLOW"
+    priority: 151
+    enabled: true
+    description: "Allow GitLab"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "in"
+        value: [80, 443, 22]
+      - field: "dst_ip"
+        operator: "eq"
+        value: "192.168.50.10"  # GitLab server
+    tags: ["gitlab", "git", "scm"]
+
+  - name: "allow_docker_registry"
+    action: "ALLOW"
+    priority: 152
+    enabled: true
+    description: "Allow Docker registry access"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 5000
+      - field: "dst_ip"
+        operator: "eq"
+        value: "192.168.50.20"  # Registry server
+    tags: ["docker", "registry", "container"]
+
+  - name: "allow_kubernetes_api"
+    action: "ALLOW"
+    priority: 153
+    enabled: true
+    description: "Allow Kubernetes API server"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 6443
+      - field: "src_ip"
+        operator: "cidr"
+        value: "192.168.100.0/24"  # K8s admin subnet
+    tags: ["kubernetes", "k8s", "api"]
+
+  - name: "allow_elasticsearch"
+    action: "ALLOW"
+    priority: 154
+    enabled: true
+    description: "Allow Elasticsearch cluster communication"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "in"
+        value: [9200, 9300]
+      - field: "src_ip"
+        operator: "cidr"
+        value: "192.168.60.0/24"  # Elasticsearch subnet
+    tags: ["elasticsearch", "elk", "logging"]
+
+  # ========================================
+  # Development Environment Rules
+  # ========================================
+
+  - name: "allow_dev_ssh"
+    action: "ALLOW"
+    priority: 180
+    enabled: true
+    description: "Allow SSH from developers to dev servers"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 22
+      - field: "dst_ip"
+        operator: "cidr"
+        value: "192.168.200.0/24"  # Dev servers
+      - field: "src_ip"
+        operator: "cidr"
+        value: "192.168.1.0/24"  # Developer workstations
+    tags: ["ssh", "development", "dev"]
+
+  - name: "allow_dev_database"
+    action: "ALLOW"
+    priority: 181
+    enabled: true
+    description: "Allow developers to access dev databases"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "in"
+        value: [3306, 5432, 27017]
+      - field: "dst_ip"
+        operator: "cidr"
+        value: "192.168.200.0/24"  # Dev servers
+      - field: "src_ip"
+        operator: "cidr"
+        value: "192.168.1.0/24"  # Developer workstations
+    tags: ["database", "development", "dev"]
+
+  # ========================================
+  # Partner/External Access Rules
+  # ========================================
+
+  - name: "allow_partner_api"
+    action: "ALLOW"
+    priority: 250
+    enabled: true
+    description: "Allow partner API access"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 443
+      - field: "dst_ip"
+        operator: "eq"
+        value: "203.0.113.10"  # Partner-facing API server
+      - field: "src_ip"
+        operator: "in"
+        value: [
+          "198.51.100.0/24",  # Partner A
+          "203.0.113.0/24"    # Partner B
+        ]
+    tags: ["partner", "api", "external"]
+
+  - name: "allow_partner_sftp"
+    action: "ALLOW"
+    priority: 251
+    enabled: true
+    description: "Allow partner SFTP access"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 22
+      - field: "dst_ip"
+        operator: "eq"
+        value: "203.0.113.20"  # Partner SFTP server
+      - field: "src_ip"
+        operator: "cidr"
+        value: "198.51.100.0/24"  # Partner network
+    tags: ["sftp", "partner", "file_transfer"]
+
+  # ========================================
+  # Emergency Access Rules
+  # ========================================
+
+  - name: "allow_emergency_ssh"
+    action: "ALLOW"
+    priority: 50  # High priority
+    enabled: false  # Enable only during emergencies
+    description: "Emergency SSH access (enable temporarily)"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 22
+      - field: "src_ip"
+        operator: "in"
+        value: [
+          "1.2.3.4",   # Administrator home
+          "5.6.7.8"    # Backup admin
+        ]
+    tags: ["emergency", "break_glass", "ssh"]
+
+  # ========================================
+  # Block Lists
+  # ========================================
+
+  - name: "block_abusive_scanners"
+    action: "DROP"
+    priority: 450
+    enabled: true
+    description: "Block known abusive IPs"
+    conditions:
+      - field: "src_ip"
+        operator: "in"
+        value: [
+          "192.0.2.1",   # Example scanner
+          "192.0.2.2",   # Another scanner
+          "198.51.100.100"  # Known attacker
+        ]
+    tags: ["blocklist", "abusive", "scanner"]
+
+  - name: "block_geoip_countries"
+    action: "DROP"
+    priority: 460
+    enabled: false  # Enable if you want geo-blocking
+    description: "Block traffic from specific countries"
+    conditions:
+      - field: "src_ip"
+        operator: "geoip_country"
+        value: ["RU", "CN", "KP", "IR"]  # Example countries
+    tags: ["geoip", "country_block", "compliance"]
+
+  # ========================================
+  # Compliance Rules
+  # ========================================
+
+  - name: "log_pci_traffic"
+    action: "LOG"
+    priority: 600
+    enabled: true
+    description: "Log all traffic to PCI systems"
+    conditions:
+      - field: "dst_ip"
+        operator: "cidr"
+        value: "192.168.150.0/24"  # PCI zone
+    tags: ["pci", "compliance", "logging"]
+
+  - name: "block_non_compliant_encryption"
+    action: "DROP"
+    priority: 610
+    enabled: true
+    description: "Block outdated TLS versions"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 443
+      - field: "tls_version"
+        operator: "lt"
+        value: "1.2"
+    tags: ["tls", "encryption", "compliance"]
+
+  # ========================================
+  # Monitoring and Alerting
+  # ========================================
+
+  - name: "alert_port_scan"
+    action: "ALERT"
+    priority: 700
+    enabled: true
+    description: "Alert on potential port scanning"
+    conditions:
+      - field: "port_scan_detected"
+        operator: "eq"
+        value: true
+    tags: ["alert", "port_scan", "security"]
+
+  - name: "alert_bruteforce"
+    action: "ALERT"
+    priority: 701
+    enabled: true
+    description: "Alert on brute force attempts"
+    conditions:
+      - field: "bruteforce_detected"
+        operator: "eq"
+        value: true
+    tags: ["alert", "bruteforce", "security"]
+
+  # ========================================
+  # Service-Specific Rate Limiting
+  # ========================================
+
+  - name: "rate_limit_web"
+    action: "LOG"
+    priority: 750
+    enabled: true
+    description: "Rate limit web requests per IP"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "in"
+        value: [80, 443]
+      - field: "connection_rate"
+        operator: "gt"
+        value: 200
+    tags: ["rate_limit", "web", "dos"]
+
+  - name: "rate_limit_api"
+    action: "LOG"
+    priority: 751
+    enabled: true
+    description: "Rate limit API requests"
+    conditions:
+      - field: "protocol"
+        operator: "eq"
+        value: "TCP"
+      - field: "dst_port"
+        operator: "eq"
+        value: 8080
+      - field: "connection_rate"
+        operator: "gt"
+        value: 500
+    tags: ["rate_limit", "api", "dos"]
