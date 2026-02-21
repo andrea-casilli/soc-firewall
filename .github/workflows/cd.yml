@@ -1,0 +1,46 @@
+# Release workflow
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.2.3)'
+        required: true
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'minor'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+
+jobs:
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Update version
+        run: |
+          echo "VERSION=${{ github.event.inputs.version }}" > .version
+          sed -i "s/__version__ = .*/__version__ = '${{ github.event.inputs.version }}'/" src/__init__.py
+      
+      - name: Update changelog
+        uses: heinrichreimer/github-changelog-generator-action@v2.3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          futureRelease: v${{ github.event.inputs.version }}
+      
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: "Release v${{ github.event.inputs.version }}"
+          body: "Release preparation for version ${{ github.event.inputs.version }}"
+          branch: "release/v${{ github.event.inputs.version }}"
+          base: main
