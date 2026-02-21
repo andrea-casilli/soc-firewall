@@ -24,4 +24,31 @@ Logs are automatically rotated based on size (default 10MB) with the following r
 
 ## Log Formats
 
-### Access Log (Text)
+### Access Log 
+
+
+### Alerts Log (JSON)
+Each line is a complete JSON object with alert details including severity, source, signature, and affected IPs.
+
+### Audit Log (JSON)
+Each line is a complete JSON object recording administrative actions with user, resource, changes, and cryptographic hash for tamper detection.
+
+## Log Analysis
+
+Common analysis commands:
+
+```bash
+# Count alerts by severity
+cat alerts.log | grep -o '"severity":"[^"]*"' | sort | uniq -c
+
+# Find top attacking IPs
+cat alerts.log | grep -o '"src_ip":"[^"]*"' | sort | uniq -c | sort -rn | head -10
+
+# Find configuration changes in audit log
+cat audit.log | grep '"event_type":"config_change"'
+
+# Monitor access in real-time
+tail -f access.log
+
+# Check for errors
+tail -f error.log
