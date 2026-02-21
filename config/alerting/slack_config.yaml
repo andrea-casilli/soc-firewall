@@ -1,0 +1,404 @@
+# SOC Firewall Slack Alert Configuration
+# Slack integration for real-time security alerts
+# Version: 1.0.0
+
+# Slack workspace configuration
+slack:
+  # Webhook URL (use environment variable)
+  webhook_url: "${SLACK_WEBHOOK_URL}"
+  
+  # Bot token for advanced features (optional)
+  bot_token: "${SLACK_BOT_TOKEN}"
+  
+  # Default channel
+  default_channel: "#security-alerts"
+  
+  # Bot username
+  username: "SOC Firewall"
+  
+  # Icon emoji or URL
+  icon_emoji: ":shield:"
+  icon_url: "https://example.com/soc-fw-icon.png"
+  
+  # Connection settings
+  timeout: 10
+  retry_count: 3
+  retry_delay: 1
+
+# Channel mapping by severity
+channels:
+  critical:
+    channel: "#security-critical"
+    notify_here: true
+    mention: "@channel"
+    priority: 1
+  
+  high:
+    channel: "#security-high"
+    notify_here: true
+    mention: "@here"
+    priority: 2
+  
+  medium:
+    channel: "#security-alerts"
+    notify_here: false
+    mention: ""
+    priority: 3
+  
+  low:
+    channel: "#security-alerts"
+    notify_here: false
+    mention: ""
+    priority: 4
+  
+  info:
+    channel: "#security-info"
+    notify_here: false
+    mention: ""
+    priority: 5
+    enabled: false  # Disable info messages by default
+
+# User groups for mentions
+user_groups:
+  security_team: "!subteam^S01234567"
+  oncall: "!subteam^S01234568"
+  admins: "!subteam^S01234569"
+  developers: "!subteam^S01234570"
+
+# Mention rules by severity
+mentions:
+  critical:
+    - "@channel"
+    - "!subteam^S01234567"  # security_team
+    - "@oncall"
+  
+  high:
+    - "@here"
+    - "!subteam^S01234567"  # security_team
+  
+  medium:
+    - ""
+  
+  low:
+    - ""
+
+# Message templates
+templates:
+  # Alert message template
+  alert:
+    fallback: "SOC Firewall Alert: {title}"
+    color: "{color}"  # Based on severity
+    pretext: "{pretext}"
+    title: "{title}"
+    title_link: "{dashboard_url}"
+    text: "{message}"
+    
+    fields:
+      - title: "Alert ID"
+        value: "{alert_id}"
+        short: true
+      - title: "Severity"
+        value: "{severity}"
+        short: true
+      - title: "Source"
+        value: "{source}"
+        short: true
+      - title: "Time"
+        value: "{time}"
+        short: true
+      - title: "Signature"
+        value: "{signature_name}"
+        short: true
+      - title: "Category"
+        value: "{category}"
+        short: true
+      - title: "Source IP"
+        value: "{src_ip}"
+        short: true
+      - title: "Destination"
+        value: "{dst_ip}:{dst_port}"
+        short: true
+      - title: "Protocol"
+        value: "{protocol}"
+        short: true
+    
+    footer: "SOC Firewall"
+    footer_icon: "https://example.com/favicon.ico"
+    ts: "{timestamp}"
+  
+  # Incident message template
+  incident:
+    fallback: "INCIDENT: {incident_id} - {title}"
+    color: "danger"
+    pretext: "🚨 *NEW INCIDENT CREATED* 🚨"
+    title: "Incident {incident_id}: {title}"
+    text: "{description}"
+    
+    fields:
+      - title: "Severity"
+        value: "{severity}"
+        short: true
+      - title: "Status"
+        value: "{status}"
+        short: true
+      - title: "Source"
+        value: "{source}"
+        short: true
+      - title: "Time"
+        value: "{time}"
+        short: true
+      - title: "Affected IPs"
+        value: "{affected_ips}"
+        short: false
+    
+    actions:
+      - type: "button"
+        text: "View Incident"
+        url: "{dashboard_url}/incidents/{incident_id}"
+        style: "primary"
+      - type: "button"
+        text: "Acknowledge"
+        url: "{api_url}/incidents/{incident_id}/acknowledge"
+        style: "danger"
+  
+  # Summary message template
+  summary:
+    fallback: "SOC Firewall Summary - {period}"
+    color: "#36a64f"
+    title: "SOC Firewall Summary Report"
+    text: "Summary for {period}"
+    
+    fields:
+      - title: "Period"
+        value: "{start_time} - {end_time}"
+        short: false
+      - title: "Total Alerts"
+        value: "{total_alerts}"
+        short: true
+      - title: "Critical"
+        value: "{critical_count}"
+        short: true
+      - title: "High"
+        value: "{high_count}"
+        short: true
+      - title: "Medium"
+        value: "{medium_count}"
+        short: true
+      - title: "Low"
+        value: "{low_count}"
+        short: true
+      - title: "Active Incidents"
+        value: "{active_incidents}"
+        short: true
+      - title: "Quarantined IPs"
+        value: "{quarantined_count}"
+        short: true
+    
+    actions:
+      - type: "button"
+        text: "View Dashboard"
+        url: "{dashboard_url}"
+  
+  # Quarantine message template
+  quarantine:
+    fallback: "IP Quarantined: {ip}"
+    color: "warning"
+    title: "IP Quarantined"
+    text: "IP address *{ip}* has been quarantined"
+    
+    fields:
+      - title: "Reason"
+        value: "{reason}"
+        short: true
+      - title: "Duration"
+        value: "{duration}"
+        short: true
+      - title: "Source"
+        value: "{source}"
+        short: true
+      - title: "Time"
+        value: "{time}"
+        short: true
+    
+    actions:
+      - type: "button"
+        text: "Release"
+        url: "{api_url}/quarantine/{entry_id}/release"
+        style: "danger"
+      - type: "button"
+        text: "Investigate"
+        url: "{dashboard_url}/quarantine/{entry_id}"
+  
+  # System status template
+  system_status:
+    fallback: "SOC Firewall System Status"
+    color: "{color}"  # good, warning, danger
+    title: "System Status Update"
+    text: "Status: {status}"
+    
+    fields:
+      - title: "Uptime"
+        value: "{uptime}"
+        short: true
+      - title: "Packets Processed"
+        value: "{packets_processed}"
+        short: true
+      - title: "Packets Blocked"
+        value: "{packets_blocked}"
+        short: true
+      - title: "Active Connections"
+        value: "{active_connections}"
+        short: true
+      - title: "Memory Usage"
+        value: "{memory_usage}"
+        short: true
+      - title: "CPU Usage"
+        value: "{cpu_usage}"
+        short: true
+
+# Severity colors
+colors:
+  critical: "danger"
+  high: "danger"
+  medium: "warning"
+  low: "#808080"  # Gray
+  info: "#36a64f"  # Green
+
+# Pretexts by severity
+pretexts:
+  critical: "🚨 *CRITICAL ALERT* 🚨"
+  high: "⚠️ *HIGH SEVERITY ALERT* ⚠️"
+  medium: "• *Medium Severity Alert*"
+  low: "Low Severity Alert"
+  info: "Info Notification"
+
+# Rate limiting
+rate_limits:
+  enabled: true
+  max_messages_per_channel: 60  # per minute
+  cooldown_period: 60  # seconds between identical messages
+
+# Message threading
+threading:
+  enabled: true
+  group_by: ["signature_id", "src_ip"]
+  max_thread_age: 3600  # 1 hour
+
+# Interactive components
+interactive:
+  enabled: true
+  
+  # Buttons
+  buttons:
+    acknowledge:
+      text: "✅ Acknowledge"
+      style: "primary"
+      action_id: "acknowledge_alert"
+    
+    investigate:
+      text: "🔍 Investigate"
+      url: "{investigation_url}"
+      style: "default"
+    
+    suppress:
+      text: "🔕 Suppress"
+      style: "danger"
+      confirm:
+        title: "Suppress this alert?"
+        text: "This will suppress future alerts of this type"
+        confirm: "Yes, suppress"
+        deny: "Cancel"
+    
+    escalate:
+      text: "⬆️ Escalate"
+      style: "danger"
+  
+  # Dropdown menus
+  select:
+    - action_id: "assign_incident"
+      placeholder: "Assign to..."
+      options:
+        - text: "Security Team"
+          value: "security_team"
+        - text: "On-call Engineer"
+          value: "oncall"
+        - text: "Developer"
+          value: "developer"
+
+# Digest settings
+digest:
+  enabled: true
+  interval: 900  # 15 minutes
+  channel: "#security-digest"
+  max_alerts: 20
+  format: "compact"  # compact, detailed
+
+# Error handling
+error_handling:
+  retry_count: 3
+  retry_delay: 5
+  fallback_file: "/tmp/slack_fallback.log"
+  alert_on_failure: true
+  failure_channel: "#security-alerts"
+
+# Web API methods (using bot token)
+api_methods:
+  conversations:
+    list: true
+    info: true
+    members: true
+  
+  users:
+    list: true
+    info: true
+  
+  reactions:
+    add: true
+    remove: true
+
+# Custom fields
+custom_fields:
+  environment: "production"
+  data_center: "us-east-1"
+  dashboard_url: "https://soc.yourdomain.com"
+  api_url: "https://api.yourdomain.com/v1"
+
+# Emoji mappings
+emojis:
+  critical: ":red_circle:"
+  high: ":orange_circle:"
+  medium: ":yellow_circle:"
+  low: ":white_circle:"
+  info: ":large_blue_circle:"
+  
+  blocked: ":no_entry:"
+  allowed: ":white_check_mark:"
+  quarantined: ":lock:"
+  incident: ":rotating_light:"
+  system: ":gear:"
+
+# Schedule
+schedule:
+  # Daily summary at 9 AM
+  daily_summary:
+    time: "09:00"
+    channel: "#security-summary"
+    timezone: "America/New_York"
+  
+  # Weekly report on Monday
+  weekly_report:
+    day: "Monday"
+    time: "10:00"
+    channel: "#security-reports"
+  
+  # Hourly stats for on-call
+  hourly_stats:
+    enabled: false
+    channel: "#security-oncall"
+
+# Testing
+test_mode:
+  enabled: false
+  channel: "#security-test"
+  override_username: "SOC Firewall Test"
+  include_timestamp: true
