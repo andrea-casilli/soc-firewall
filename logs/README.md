@@ -49,6 +49,458 @@ cat audit.log | grep '"event_type":"config_change"'
 
 # Monitor access in real-time
 tail -f access.log
+## Security
+
+- **Log files are readable only by the `socfw` user and group**
+- **Audit logs include cryptographic hashes for tamper detection**
+- **Sensitive data (passwords, tokens) are redacted**
+- **Logs should be regularly backed up to secure storage**
+
+## Log Rotation Configuration
+
+Log rotation is managed by `logrotate`. Configuration file at `/etc/logrotate.d/soc-firewall`:
+
+```bash
+/var/log/soc-firewall/*.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 socfw socfw
+    sharedscripts
+    postrotate
+        systemctl reload soc-firewall > /dev/null 2>&1 || true
+    endscript
+}
+
+/var/log/soc-firewall/audit.log {
+    daily
+    rotate 365
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0600 socfw socfw
+    sharedscripts
+    postrotate
+        systemctl reload soc-firewall > /dev/null 2>&1 || true
+    endscript
+}
+Log Monitoring with Filebeat
+Example Filebeat configuration for forwarding to Elasticsearch:
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/log/soc-firewall/alerts.log
+  json.keys_under_root: true
+  json.add_error_key: true
+  tags: ["soc-firewall", "alerts"]
+
+- type: log
+  enabled: true
+  paths:
+    - /var/log/soc-firewall/access.log
+  multiline.pattern: '^\d{4}-\d{2}-\d{2}'
+  multiline.negate: true
+  multiline.match: after
+  tags: ["soc-firewall", "access"]
+
+- type: log
+  enabled: true
+  paths:
+    - /var/log/soc-firewall/audit.log
+  json.keys_under_root: true
+  json.add_error_key: true
+  tags: ["soc-firewall", "audit"]
+
+output.elasticsearch:
+  hosts: ["localhost:9200"]
+  index: "soc-firewall-%{+yyyy.MM.dd}"
+
+setup.kibana:
+  host: "localhost:5601"
 
 # Check for errors
 tail -f error.log
+Log Analysis with Python
+Basic Log Reader
+#!/usr/bin/env python3
+"""
+Simple SOC Firewall Log Reader
+"""
+
+import json
+import sys
+from datetime import datetime
+from pathlib import Path
+
+def read_alerts(log_file: str, severity: str = None, limit: int = 10):
+    """Read and filter alerts"""
+    alerts = []
+    
+    with open(log_file, 'r') as f:
+        for line in f:
+            if line.startswith('#'):
+                continue
+            try:
+                alert = json.loads(line)
+                if severity and alert.get('severity') != severity:
+                    continue
+                alerts.append(alert)
+                if len(alerts) >= limit:
+                    break
+            except json.JSONDecodeError:
+                continue
+    
+    return alerts
+
+def read_access(log_file: str, status_code: int = None, limit: int = 10):
+    """Read and filter access logs"""
+    import re
+    
+    pattern = r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - (\w+) - ([^ ]+) - ([^ ]+) - (\w+) - ([^ ]+) - (\d+) - (\d+)'
+    entries = []
+    
+    with open(log_file, 'r') as f:
+        for line in f:
+            if line.startswith('#'):
+                continue
+            match = re.match(pattern, line)
+            if match:
+                timestamp, level, client_ip, user, method, endpoint, status, time_ms = match.groups()
+                status = int(status)
+                
+                if status_code and status != status_code:
+                    continue
+                
+                entries.append({
+                    'timestamp': timestamp,
+                    'level': level,
+                    'client_ip': client_ip,
+                    'user': user,
+                    'method': method,
+                    'endpoint': endpoint,
+                    'status': status,
+                    'response_time': int(time_ms)
+                })
+                
+                if len(entries) >= limit:
+                    break
+    
+    return entries
+
+def read_audit(log_file: str, event_type: str = None, limit: int = 10):
+    """Read and filter audit logs"""
+    entries = []
+    
+    with open(log_file, 'r') as f:
+        for line in f:
+            if line.startswith('#'):
+                continue
+            try:
+                entry = json.loads(line)
+                if event_type and entry.get('event_type') != event_type:
+                    continue
+                entries.append(entry)
+                if len(entries) >= limit:
+                    break
+            except json.JSONDecodeError:
+                continue
+    
+    return entries
+
+if __name__ == "__main__":
+    log_dir = Path("/var/log/soc-firewall")
+    
+    # Read recent critical alerts
+    print("\n=== CRITICAL ALERTS ===")
+    alerts = read_alerts(log_dir / "alerts.log", severity="critical", limit=5)
+    for alert in alerts:
+        print(f"[{alert['timestamp']}] {alert['title']} - {alert['src_ip']}")
+    
+    # Read recent failed access attempts
+    print("\n=== FAILED ACCESS ATTEMPTS ===")
+    access = read_access(log_dir / "access.log", status_code=401, limit=5)
+    for entry in access:
+        print(f"[{entry['timestamp']}] {entry['client_ip']} - {entry['user']}")
+    
+    # Read recent configuration changes
+    print("\n=== CONFIGURATION CHANGES ===")
+    audit = read_audit(log_dir / "audit.log", event_type="config_change", limit=5)
+    for entry in audit:
+        print(f"[{entry['timestamp']}] {entry['user']} - {entry['action']} - {entry['resource']}")
+
+
+Real-time Log Monitor
+#!/usr/bin/env python3
+"""
+Real-time SOC Firewall Log Monitor
+"""
+
+import time
+import json
+import subprocess
+from datetime import datetime
+from pathlib import Path
+
+class LogMonitor:
+    """Monitor log files in real-time"""
+    
+    def __init__(self, log_dir: str = "/var/log/soc-firewall"):
+        self.log_dir = Path(log_dir)
+        self.positions = {}
+    
+    def follow_file(self, filepath: Path, callback):
+        """Follow a file like tail -f"""
+        if not filepath.exists():
+            return
+        
+        # Get initial position
+        if filepath not in self.positions:
+            self.positions[filepath] = filepath.stat().st_size
+        
+        with open(filepath, 'r') as f:
+            f.seek(self.positions[filepath])
+            
+            while True:
+                line = f.readline()
+                if line:
+                    if line.startswith('#'):
+                        continue
+                    callback(filepath, line)
+                else:
+                    time.sleep(0.1)
+                
+                # Update position
+                self.positions[filepath] = f.tell()
+    
+    def monitor(self):
+        """Monitor all log files"""
+        from threading import Thread
+        
+        files = [
+            self.log_dir / "alerts.log",
+            self.log_dir / "access.log",
+            self.log_dir / "audit.log"
+        ]
+        
+        threads = []
+        for filepath in files:
+            thread = Thread(target=self.follow_file, args=(filepath, self.handle_line))
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+        
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\nStopping monitor...")
+    
+    def handle_line(self, filepath: Path, line: str):
+        """Handle new log line"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        
+        if filepath.name == "alerts.log":
+            try:
+                alert = json.loads(line)
+                severity = alert.get('severity', 'unknown').upper()
+                print(f"\033[91m[{timestamp}] ALERT [{severity}] {alert.get('title')}\033[0m")
+            except:
+                pass
+        
+        elif filepath.name == "access.log":
+            if "401" in line or "403" in line or "500" in line:
+                print(f"\033[93m[{timestamp}] ACCESS ERROR: {line.strip()}\033[0m")
+        
+        elif filepath.name == "audit.log":
+            if "config_change" in line or "rule_change" in line:
+                print(f"\033[94m[{timestamp}] AUDIT: Configuration changed\033[0m")
+
+if __name__ == "__main__":
+    monitor = LogMonitor()
+    print("Starting log monitor (Ctrl+C to stop)...")
+    monitor.monitor()
+
+Log Archiving
+
+#!/bin/bash
+#
+# Archive old logs to compressed storage
+#
+
+LOG_DIR="/var/log/soc-firewall"
+ARCHIVE_DIR="/var/backups/soc-firewall/logs"
+RETENTION_DAYS=90
+DATE=$(date +%Y%m%d)
+
+# Create archive directory
+mkdir -p $ARCHIVE_DIR
+
+# Archive logs older than 30 days
+find $LOG_DIR -name "*.log" -type f -mtime +30 -exec tar -czf $ARCHIVE_DIR/logs_$DATE.tar.gz {} \;
+
+# Remove original logs after successful archive
+if [ $? -eq 0 ]; then
+    find $LOG_DIR -name "*.log" -type f -mtime +30 -delete
+fi
+
+# Clean up archives older than retention period
+find $ARCHIVE_DIR -name "logs_*.tar.gz" -type f -mtime +$RETENTION_DAYS -delete
+
+echo "Log archiving completed at $(date)"
+
+Cloud Archiving with AWS CLI
+#!/bin/bash
+#
+# Upload archived logs to S3
+#
+
+ARCHIVE_DIR="/var/backups/soc-firewall/logs"
+S3_BUCKET="s3://soc-firewall-logs/production/"
+DATE=$(date +%Y%m%d)
+
+# Upload to S3
+aws s3 sync $ARCHIVE_DIR $S3_BUCKET --storage-class GLACIER --delete
+
+# Verify upload
+if [ $? -eq 0 ]; then
+    echo "Logs uploaded to S3 successfully"
+    # Optionally delete local archives after successful upload
+    # find $ARCHIVE_DIR -name "*.tar.gz" -type f -delete
+fi
+Log Integrity Verification
+Verify Audit Log Integrity
+#!/usr/bin/env python3
+"""
+Verify integrity of audit logs using cryptographic hashes
+"""
+
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+def verify_audit_log(log_file: str) -> bool:
+    """Verify chain of trust in audit log"""
+    
+    previous_hash = None
+    entries = []
+    verified = True
+    
+    with open(log_file, 'r') as f:
+        for line_num, line in enumerate(f, 1):
+            if line.startswith('#'):
+                continue
+            
+            try:
+                entry = json.loads(line)
+                
+                # Calculate hash of current entry
+                entry_copy = entry.copy()
+                if 'checksum' in entry_copy:
+                    del entry_copy['checksum']
+                
+                current_hash = hashlib.sha256(
+                    json.dumps(entry_copy, sort_keys=True).encode()
+                ).hexdigest()
+                
+                # Verify against stored checksum
+                if 'checksum' in entry:
+                    if entry['checksum'] != current_hash[:16]:
+                        print(f"❌ Line {line_num}: Hash mismatch!")
+                        verified = False
+                
+                # Verify chain
+                if 'previous_hash' in entry:
+                    if entry['previous_hash'] != previous_hash:
+                        print(f"❌ Line {line_num}: Chain broken!")
+                        verified = False
+                
+                previous_hash = current_hash[:16]
+                entries.append(entry)
+                
+            except json.JSONDecodeError:
+                print(f"❌ Line {line_num}: Invalid JSON")
+                verified = False
+    
+    if verified:
+        print("✅ Audit log integrity verified")
+    else:
+        print("❌ Audit log tampering detected!")
+    
+    return verified
+
+if __name__ == "__main__":
+    log_file = sys.argv[1] if len(sys.argv) > 1 else "/var/log/soc-firewall/audit.log"
+    verify_audit_log(log_file)
+
+Log Analysis Dashboard
+Kibana Dashboard Configuration
+{
+  "version": "7.10.0",
+  "objects": [
+    {
+      "id": "soc-firewall-alerts",
+      "type": "visualization",
+      "attributes": {
+        "title": "SOC Firewall - Alerts Overview",
+        "visState": {
+          "title": "Alerts by Severity",
+          "type": "pie",
+          "params": {
+            "addLegend": true,
+            "addTooltip": true,
+            "isDonut": true
+          },
+          "aggs": [
+            {
+              "id": "1",
+              "enabled": true,
+              "type": "count",
+              "schema": "metric"
+            },
+            {
+              "id": "2",
+              "enabled": true,
+              "type": "terms",
+              "schema": "segment",
+              "params": {
+                "field": "severity.keyword",
+                "size": 5
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+
+Troubleshooting
+Common Issues
+Issue	Check	Solution
+No logs being written	Permissions, disk space	ls -la /var/log/soc-firewall/, df -h
+Log rotation not working	logrotate config	logrotate -d /etc/logrotate.d/soc-firewall
+JSON parse errors	Corrupted log	Check file integrity, restore from backup
+Audit hash mismatch	Tampering detected	Investigate immediately, restore from secure backup
+Logs too verbose	Log level too low	Adjust log_level in config to warning or error
+
+Recovery Commands
+# Check log file integrity
+tail -n 50 /var/log/soc-firewall/audit.log | python3 -m json.tool
+
+# Repair corrupted JSON (if last entry is incomplete)
+sed -i '$ d' /var/log/soc-firewall/alerts.log
+
+# Force log rotation
+logrotate -f /etc/logrotate.d/soc-firewall
+
+# Check disk space
+df -h /var/log
+
+# Count lines in log files
+wc -l /var/log/soc-firewall/*.log
