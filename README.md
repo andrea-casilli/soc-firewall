@@ -237,7 +237,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 ## Authors
 
-- **Security Team** - *Initial work* - [YourOrg](https://github.com/yourorg)
+Casilli Andrea
 
 ## Acknowledgments
 
