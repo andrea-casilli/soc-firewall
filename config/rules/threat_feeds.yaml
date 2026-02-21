@@ -1,0 +1,198 @@
+# SOC Firewall Threat Intelligence Feeds
+# Configuration for external threat intelligence sources
+# Version: 1.0.0
+
+# Threat intelligence feed configuration
+# Each feed provides indicators of compromise (IOCs)
+
+feeds:
+  # ========================================
+  # IP Address Feeds
+  # ========================================
+
+  - name: "firehol_level1"
+    enabled: true
+    description: "FireHOL Level 1 - Highly malicious IPs"
+    type: "ip"
+    format: "txt"
+    url: "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level1.netset"
+    update_interval: 3600  # 1 hour
+    confidence: 0.9
+    tags: ["malicious", "firehol", "high_confidence"]
+    
+  - name: "firehol_level2"
+    enabled: true
+    description: "FireHOL Level 2 - Suspicious IPs"
+    type: "ip"
+    format: "txt"
+    url: "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level2.netset"
+    update_interval: 3600
+    confidence: 0.7
+    tags: ["suspicious", "firehol", "medium_confidence"]
+
+  - name: "firehol_level3"
+    enabled: false  # Too noisy for production
+    description: "FireHOL Level 3 - Less reliable sources"
+    type: "ip"
+    format: "txt"
+    url: "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level3.netset"
+    update_interval: 3600
+    confidence: 0.5
+    tags: ["noisy", "firehol", "low_confidence"]
+
+  - name: "emerging_threats_compromised"
+    enabled: true
+    description: "Emerging Threats - Compromised IPs"
+    type: "ip"
+    format: "txt"
+    url: "https://rules.emergingthreats.net/blockrules/compromised-ips.txt"
+    update_interval: 3600
+    confidence: 0.85
+    tags: ["compromised", "emerging_threats"]
+
+  - name: "emerging_threats_botcc"
+    enabled: true
+    description: "Emerging Threats - Botnet C&C"
+    type: "ip"
+    format: "txt"
+    url: "https://rules.emergingthreats.net/fwrules/emerging-Block-IPs.txt"
+    update_interval: 3600
+    confidence: 0.9
+    tags: ["botnet", "c2", "emerging_threats"]
+
+  - name: "abuseipdb_blacklist"
+    enabled: false  # Requires API key
+    description: "AbuseIPDB Blacklist"
+    type: "ip"
+    format: "json"
+    url: "https://api.abuseipdb.com/api/v2/blacklist"
+    api_key_env: "ABUSEIPDB_API_KEY"
+    params:
+      confidenceMinimum: 90
+      limit: 10000
+    update_interval: 3600
+    confidence: 0.95
+    tags: ["abuseipdb", "reported"]
+
+  - name: "blocklist_de_all"
+    enabled: true
+    description: "Blocklist.de - All attacks"
+    type: "ip"
+    format: "txt"
+    url: "https://lists.blocklist.de/lists/all.txt"
+    update_interval: 3600
+    confidence: 0.8
+    tags: ["blocklist.de", "attacks"]
+
+  - name: "blocklist_de_ssh"
+    enabled: true
+    description: "Blocklist.de - SSH attacks"
+    type: "ip"
+    format: "txt"
+    url: "https://lists.blocklist.de/lists/ssh.txt"
+    update_interval: 3600
+    confidence: 0.85
+    tags: ["ssh", "bruteforce", "blocklist.de"]
+
+  - name: "blocklist_de_mail"
+    enabled: true
+    description: "Blocklist.de - Mail attacks"
+    type: "ip"
+    format: "txt"
+    url: "https://lists.blocklist.de/lists/mail.txt"
+    update_interval: 3600
+    confidence: 0.8
+    tags: ["email", "spam", "blocklist.de"]
+
+  - name: "blocklist_de_apache"
+    enabled: true
+    description: "Blocklist.de - Apache attacks"
+    type: "ip"
+    format: "txt"
+    url: "https://lists.blocklist.de/lists/apache.txt"
+    update_interval: 3600
+    confidence: 0.8
+    tags: ["web", "apache", "blocklist.de"]
+
+  - name: "spamhaus_drop"
+    enabled: true
+    description: "Spamhaus DROP List"
+    type: "ip"
+    format: "txt"
+    url: "https://www.spamhaus.org/drop/drop.txt"
+    update_interval: 86400  # 24 hours
+    confidence: 0.95
+    tags: ["spamhaus", "drop", "high_confidence"]
+
+  - name: "spamhaus_edrop"
+    enabled: true
+    description: "Spamhaus EDROP List (extended)"
+    type: "ip"
+    format: "txt"
+    url: "https://www.spamhaus.org/drop/edrop.txt"
+    update_interval: 86400
+    confidence: 0.9
+    tags: ["spamhaus", "edrop"]
+
+  - name: "cinsscore_badguys"
+    enabled: true
+    description: "CINSscore Bad Guys List"
+    type: "ip"
+    format: "txt"
+    url: "https://cinsscore.com/list/ci-badguys.txt"
+    update_interval: 3600
+    confidence: 0.85
+    tags: ["cinsscore", "badguys"]
+
+  - name: "sslbl_blacklist"
+    enabled: true
+    description: "SSL Blacklist - Malicious SSL certificates"
+    type: "ip"
+    format: "csv"
+    url: "https://sslbl.abuse.ch/blacklist/sslipblacklist.csv"
+    update_interval: 3600
+    confidence: 0.9
+    tags: ["ssl", "certificates", "abuse.ch"]
+
+  - name: "sslbl_ja3"
+    enabled: false  # Experimental
+    description: "SSL Blacklist - JA3 fingerprints"
+    type: "ja3"
+    format: "csv"
+    url: "https://sslbl.abuse.ch/blacklist/ja3_fingerprints.csv"
+    update_interval: 86400
+    confidence: 0.8
+    tags: ["ja3", "fingerprint", "abuse.ch"]
+
+  - name: "tor_exit_nodes"
+    enabled: false  # Enable if you want to block Tor
+    description: "Tor Exit Nodes"
+    type: "ip"
+    format: "txt"
+    url: "https://check.torproject.org/torbulkexitlist"
+    update_interval: 3600
+    confidence: 1.0
+    tags: ["tor", "exit_nodes", "anonymity"]
+
+  # ========================================
+  # Domain Name Feeds
+  # ========================================
+
+  - name: "malwaredomains"
+    enabled: true
+    description: "MalwareDomains List"
+    type: "domain"
+    format: "txt"
+    url: "https://mirror1.malwaredomains.com/files/justdomains"
+    update_interval: 86400
+    confidence: 0.85
+    tags: ["malware", "domains"]
+
+  - name: "malwaredomains_hosts"
+    enabled: true
+    description: "MalwareDomains Hosts Format"
+    type: "domain"
+    format: "hosts"
+    url: "https://mirror1.malwaredomains.com/files/domains.txt"
+    update_interval: 86400
+    confidence:
