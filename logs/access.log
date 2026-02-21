@@ -1,0 +1,35 @@
+# SOC Firewall Access Log
+# Records all API access and authentication events
+# Format: timestamp - level - client_ip - user - method - endpoint - status_code - response_time_ms
+
+2024-01-15 08:23:45,123 - INFO - 192.168.1.100 - admin - GET - /api/v1/status - 200 - 45
+2024-01-15 08:23:46,234 - INFO - 192.168.1.101 - readonly - GET - /api/v1/stats - 200 - 62
+2024-01-15 08:24:01,456 - WARNING - 10.0.0.50 - unauthorized - GET - /api/v1/alerts - 401 - 12
+2024-01-15 08:24:15,789 - INFO - 192.168.1.100 - admin - POST - /api/v1/rules - 201 - 156
+2024-01-15 08:24:30,123 - INFO - 192.168.1.102 - monitor - GET - /api/v1/connections - 200 - 34
+2024-01-15 08:25:00,456 - INFO - 192.168.1.100 - admin - GET - /api/v1/incidents - 200 - 23
+2024-01-15 08:25:15,789 - WARNING - 203.0.113.5 - invalid_token - GET - /api/v1/quarantine - 401 - 8
+2024-01-15 08:25:30,123 - INFO - 192.168.1.103 - analyst - GET - /api/v1/alerts?severity=high - 200 - 67
+2024-01-15 08:26:00,456 - INFO - 192.168.1.100 - admin - PUT - /api/v1/rules/block_external_ping - 200 - 89
+2024-01-15 08:26:30,789 - INFO - 192.168.1.104 - viewer - GET - /api/v1/threat-intel/check/8.8.8.8 - 200 - 234
+2024-01-15 08:27:00,123 - INFO - 192.168.1.100 - admin - POST - /api/v1/quarantine/ip - 201 - 567
+2024-01-15 08:27:30,456 - INFO - 192.168.1.105 - api_user - GET - /api/v1/statistics - 200 - 45
+2024-01-15 08:28:00,789 - WARNING - 198.51.100.23 - rate_limited - GET - /api/v1/rules - 429 - 3
+2024-01-15 08:28:30,123 - INFO - 192.168.1.100 - admin - DELETE - /api/v1/quarantine/Q1705123456 - 200 - 78
+2024-01-15 08:29:00,456 - INFO - 192.168.1.106 - soc_analyst - POST - /api/v1/incidents/INC-1705123456/notes - 201 - 45
+2024-01-15 08:29:30,789 - ERROR - 10.0.0.100 - admin - POST - /api/v1/rules - 500 - 1234
+2024-01-15 08:30:00,123 - INFO - 192.168.1.100 - admin - GET - /api/v1/config - 200 - 67
+2024-01-15 08:30:30,456 - INFO - 192.168.1.107 - automation - GET - /api/v1/status - 200 - 23
+2024-01-15 08:31:00,789 - INFO - websocket - system - client_connected - client_id: client_1705123456 - 0
+2024-01-15 08:31:15,123 - INFO - websocket - system - client_subscribed - client_id: client_1705123456, events: ["alert", "incident"] - 0
+2024-01-15 08:31:30,456 - INFO - websocket - system - client_disconnected - client_id: client_1705123456 - 0
+2024-01-15 08:32:00,789 - INFO - 192.168.1.108 - api_key - GET - /api/v1/metrics - 200 - 34
+
+# Daily Summary
+# Date: 206/00/00
+# Total Requests: 1245
+# Successful: 1189
+# Failed: 56
+# Unique Clients: 23
+# Avg Response Time: 87ms
+# Peak Requests/min: 89 at 09:45
