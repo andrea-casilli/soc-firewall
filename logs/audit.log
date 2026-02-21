@@ -1,0 +1,45 @@
+# SOC Firewall Audit Log
+# Records all administrative actions and configuration changes
+# Tamper-evident, sequential logging
+
+{"audit_id": "AUDIT-1705123456-001", "timestamp": "2024-01-15T08:23:45.123Z", "event_type": "config_change", "user": "admin@example.com", "action": "update", "resource": "firewall_config", "result": "success", "ip": "192.168.1.100", "changes": {"old": {"block_external_ping": false}, "new": {"block_external_ping": true}}, "checksum": "a1b2c3d4e5f6g7h8i9j0"}
+
+{"audit_id": "AUDIT-1705123456-002", "timestamp": "2024-01-15T08:24:30.456Z", "event_type": "rule_change", "user": "admin@example.com", "action": "create", "resource": "rule:allow_vpn_users", "result": "success", "ip": "192.168.1.100", "details": {"rule_name": "allow_vpn_users", "action": "ALLOW", "priority": 25, "conditions": [{"field": "src_ip", "operator": "cidr", "value": "10.200.0.0/16"}]}}
+
+{"audit_id": "AUDIT-1705123456-003", "timestamp": "2024-01-15T08:25:15.789Z", "event_type": "rule_change", "user": "admin@example.com", "action": "delete", "resource": "rule:block_legacy_ports", "result": "success", "ip": "192.168.1.100", "reason": "Rule deprecated, replaced by block_common_attack_ports"}
+
+{"audit_id": "AUDIT-1705123456-004", "timestamp": "2024-01-15T08:26:00.123Z", "event_type": "quarantine", "user": "soc_analyst@example.com", "action": "add", "resource": "ip:185.130.5.133", "result": "success", "ip": "192.168.1.106", "details": {"reason": "malicious", "duration": 3600, "source": "threat_intel", "description": "Known C2 server"}}
+
+{"audit_id": "AUDIT-1705123456-005", "timestamp": "2024-01-15T08:26:45.456Z", "event_type": "login", "user": "analyst@example.com", "action": "login", "resource": "web_ui", "result": "success", "ip": "192.168.1.107", "auth_method": "password", "session_id": "sess_abc123def456"}
+
+{"audit_id": "AUDIT-1705123456-006", "timestamp": "2024-01-15T08:27:30.789Z", "event_type": "login", "user": "unknown_user", "action": "login", "resource": "api", "result": "failure", "ip": "203.0.113.50", "auth_method": "token", "reason": "invalid_token", "attempts": 3}
+
+{"audit_id": "AUDIT-1705123456-007", "timestamp": "2024-01-15T08:28:15.123Z", "event_type": "incident_update", "user": "soc_analyst@example.com", "action": "update_status", "resource": "incident:INC-1705123456", "result": "success", "ip": "192.168.1.106", "changes": {"old": {"status": "new"}, "new": {"status": "investigating"}}, "notes": "Assigning to on-call team"}
+
+{"audit_id": "AUDIT-1705123456-008", "timestamp": "2024-01-15T08:29:00.456Z", "event_type": "system_start", "user": "system", "action": "start", "resource": "soc_firewall", "result": "success", "version": "1.0.0", "boot_id": "boot_9876zyxw5432"}
+
+{"audit_id": "AUDIT-1705123456-009", "timestamp": "2024-01-15T08:29:45.789Z", "event_type": "permission_change", "user": "admin@example.com", "action": "modify", "resource": "user:analyst@example.com", "result": "success", "ip": "192.168.1.100", "changes": {"added_roles": ["incident_manager"], "removed_roles": []}}
+
+{"audit_id": "AUDIT-1705123456-010", "timestamp": "2024-01-15T08:30:30.123Z", "event_type": "threat_feed_update", "user": "system", "action": "update", "resource": "threat_intel_feeds", "result": "success", "details": {"feeds_updated": 8, "new_indicators": 15432, "total_indicators": 1234567}}
+
+{"audit_id": "AUDIT-1705123456-011", "timestamp": "2024-01-15T08:31:15.456Z", "event_type": "quarantine", "user": "system", "action": "release", "resource": "ip:185.130.5.133", "result": "success", "reason": "expired", "duration_actual": 3540}
+
+{"audit_id": "AUDIT-1705123456-012", "timestamp": "2024-01-15T08:32:00.789Z", "event_type": "config_export", "user": "admin@example.com", "action": "export", "resource": "full_configuration", "result": "success", "ip": "192.168.1.100", "filename": "soc_firewall_config_20240115.json"}
+
+{"audit_id": "AUDIT-1705123456-013", "timestamp": "2024-01-15T08:32:45.123Z", "event_type": "alert_acknowledge", "user": "analyst@example.com", "action": "acknowledge", "resource": "alert:ALT-1705123456-0003", "result": "success", "ip": "192.168.1.107", "response_time": 187}
+
+{"audit_id": "AUDIT-1705123456-014", "timestamp": "2024-01-15T08:33:30.456Z", "event_type": "playbook_execution", "user": "system", "action": "execute", "resource": "playbook:quarantine_malicious_ip", "result": "success", "trigger": "incident:INC-1705123457", "steps_completed": 4}
+
+{"audit_id": "AUDIT-1705123456-015", "timestamp": "2024-01-15T08:34:15.789Z", "event_type": "database_backup", "user": "system", "action": "backup", "resource": "threat_intel_db", "result": "success", "size_bytes": 157286400, "backup_file": "threat_intel_20240115.sqlite.gz"}
+
+# Chain of Trust
+{"audit_id": "AUDIT-CHAIN-1705125600", "timestamp": "2024-01-15T09:00:00.000Z", "event_type": "integrity_check", "result": "success", "previous_hash": "9a8b7c6d5e4f3g2h1i0j", "current_hash": "0j1i2h3g4f5e6d7c8b9a", "entries_verified": 156, "tampering_detected": false}
+
+# Daily Audit Summary - 2024-01-15
+# Total Audit Events: 1247
+# Configuration Changes: 23
+# Rule Changes: 15
+# Quarantine Actions: 34
+# Login Attempts: 245 (success: 234, failure: 11)
+# System Events: 89
+# Integrity Checks: 24 (all passed)
