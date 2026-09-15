@@ -21,7 +21,6 @@ python-socketio==5.10.0
 eventlet==0.33.3  # For WebSocket production
 
 # Database
-sqlite3  # Built-in
 sqlalchemy==2.0.23
 alembic==1.12.1
 
@@ -73,8 +72,6 @@ emails==8.0.2
 # Rate limiting
 limits==3.6.0
 
-# Threading
-concurrent-futures==3.0.0  # For Python 3.6 compatibility
 
 # Compression
 zstandard==0.22.0
