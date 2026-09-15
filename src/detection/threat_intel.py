@@ -5,6 +5,7 @@ import threading
 import requests
 from typing import Dict, List, Optional, Set, Tuple, Any
 from dataclasses import dataclass, field
+from enum import Enum
 from datetime import datetime, timedelta
 from pathlib import Path
 import ipaddress
@@ -239,4 +240,67 @@ class ThreatIntelligence:
                 self.add_feed(feed)
     
     def add_feed(self, feed: ThreatFeed) -> None:
-        """Add a threat feed
+        """Register one enabled feed without performing a network request."""
+        if not feed.enabled:
+            return
+        if any(existing.name == feed.name for existing in self.feeds):
+            return
+        self.feeds.append(feed)
+        self.stats["feeds_active"] = len(self.feeds)
+
+    def _start_update_threads(self) -> None:
+        """Keep feed registration side-effect free; callers update feeds explicitly."""
+        self.update_threads = []
+
+    def _load_cache(self) -> None:
+        """Load persisted indicators into the in-memory indexes."""
+        rows = self.conn.execute(
+            "SELECT value, type, source, confidence, first_seen, last_seen, expires, tags, description, reference FROM indicators"
+        ).fetchall()
+        for row in rows:
+            try:
+                indicator = ThreatIndicator(
+                    value=row[0],
+                    type=ThreatFeedType(row[1]),
+                    source=row[2],
+                    confidence=row[3],
+                    first_seen=row[4],
+                    last_seen=row[5],
+                    expires=row[6],
+                    tags=json.loads(row[7] or "[]"),
+                    description=row[8],
+                    reference=row[9],
+                )
+                self._index_indicator(indicator)
+            except (TypeError, ValueError, json.JSONDecodeError) as error:
+                logger.warning("Skipping invalid threat-intel row: %s", error)
+        self.stats["total_indicators"] = len(self.cache)
+
+    def _index_indicator(self, indicator: ThreatIndicator) -> None:
+        """Add an indicator to the cache and the index appropriate to its type."""
+        key = f"{indicator.type.value}:{indicator.value.lower()}"
+        self.cache[key] = indicator
+        index = {
+            ThreatFeedType.IP: self.ip_index,
+            ThreatFeedType.DOMAIN: self.domain_index,
+            ThreatFeedType.HASH: self.hash_index,
+        }.get(indicator.type)
+        if index is not None:
+            index[indicator.value.lower()].append(indicator)
+
+    def check_ip(self, ip: str) -> List[ThreatIndicator]:
+        """Return active indicators matching a valid IP address."""
+        try:
+            normalized = str(ipaddress.ip_address(ip))
+        except ValueError:
+            logger.warning("Invalid IP supplied to threat intelligence: %s", ip)
+            return []
+        matches = [item for item in self.ip_index.get(normalized, []) if not item.is_expired()]
+        self.stats["lookup_hits" if matches else "lookup_misses"] += 1
+        return matches
+
+    def close(self) -> None:
+        """Release local database resources."""
+        self.running = False
+        if hasattr(self, "conn"):
+            self.conn.close()
